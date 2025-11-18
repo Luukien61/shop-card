@@ -3,6 +3,7 @@ package com.luukien.javacard.screen;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -23,12 +24,14 @@ public class SceneManager {
         try {
             Parent root = FXMLLoader.load(Objects.requireNonNull(
                     SceneManager.class.getResource("/com/luukien/javacard/" + fxmlFile)));
+            stage.getIcons().add(new Image(Objects.requireNonNull(SceneManager.class.getResourceAsStream("/icon.png"))));
             if (scene == null) {
                 scene = new Scene(root);
                 stage.setScene(scene);
             } else {
                 scene.setRoot(root);
             }
+
             stage.setWidth(WIDTH);
             stage.setHeight(HEIGHT);
             stage.setResizable(false);
