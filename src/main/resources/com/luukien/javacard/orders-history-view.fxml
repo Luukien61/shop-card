@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="650.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <Label layoutX="26.0" layoutY="71.0" prefHeight="32.0" prefWidth="597.0" style="-fx-background-color: #0866FF; -fx-background-radius: 8;" text="     Lịch sử mua hàng" textFill="WHITE">
+         <font>
+            <Font name="System Bold" size="14.0" />
+         </font>
+      </Label>
+      <TableView layoutX="26.0" layoutY="170.0" prefHeight="291.0" prefWidth="597.0">
+        <columns>
+          <TableColumn fx:id="colTime" prefWidth="171.99996376037598" text="Ngày mua" />
+            <TableColumn fx:id="colOrderCode" prefWidth="149.3333282470703" text="Mã đơn hàng" />
+          <TableColumn fx:id="colTotalPrice" prefWidth="152.66668701171875" text="Tổng tiền" />
+        </columns>
+      </TableView>
+      <Label layoutX="26.0" layoutY="129.0" text="Ngày mua">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+      <DatePicker fx:id="datePicker" layoutX="120.0" layoutY="126.0" promptText="dd/mm/yyyy" />
+      <Button fx:id="filterBtn" layoutX="348.0" layoutY="126.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="55.0" text="Lọc">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Button>
+      <Button fx:id="backButton" layoutX="26.0" layoutY="24.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Quay lại" />
+   </children>
+</AnchorPane>
