@@ -83,6 +83,15 @@ create index if not exists order_item_code_idx on order_item (order_code);
 create index if not exists user_card_idx on users (card_id);
 
 
+ALTER TABLE products ADD COLUMN IF NOT EXISTS search_vector tsvector
+    GENERATED ALWAYS AS (
+        setweight(to_tsvector('simple', coalesce(name, '')), 'A') ||
+        setweight(to_tsvector('simple', coalesce(code, '')), 'B')
+        ) STORED;
+
+CREATE INDEX IF NOT EXISTS idx_products_search_vector ON products USING GIN (search_vector);
+
+
 
 
 
