@@ -9,6 +9,7 @@ module com.luukien.javacard {
     requires java.sql;
     requires static lombok;
     requires bcrypt;
+    requires java.prefs;
 
     opens com.luukien.javacard to javafx.fxml;
     exports com.luukien.javacard;

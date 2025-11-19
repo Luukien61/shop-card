@@ -1,10 +1,22 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.model.UserRole;
+import com.luukien.javacard.screen.SceneManager;
+import com.luukien.javacard.screen.Scenes;
+import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.DateConverter;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 public class HomeManagementController {
+    @FXML
+    private Tab orderPaneTab;
+    @FXML
+    private Tab productPaneTab;
+    @FXML
+    private Tab userPaneTab;
+    @FXML
+    private TabPane tabPane;
     @FXML
     private Button createOrderBtn;
     @FXML
@@ -65,7 +77,17 @@ public class HomeManagementController {
     @FXML
     public void initialize() {
         orderdatePicker.setConverter(DateConverter.getLocalDateConverter());
-
+        String role = AppState.getInstance().getCurrentUserRole();
+        if (role.equals(UserRole.ADMIN.toString())) {
+            addNewProductBtn.setDisable(false);
+            addNewProductBtn.setVisible(true);
+        }
+        addNewProductBtn.setOnAction(e -> onNewProductBtnClick());
     }
+
+    private void onNewProductBtnClick() {
+        SceneManager.switchTo(Scenes.ADD_PRODUCT_SCENE);
+    }
+
 
 }

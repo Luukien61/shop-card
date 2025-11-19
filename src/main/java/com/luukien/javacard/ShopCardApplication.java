@@ -1,6 +1,7 @@
 package com.luukien.javacard;
 
 import com.luukien.javacard.screen.SceneManager;
+import com.luukien.javacard.screen.Scenes;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -12,7 +13,7 @@ public class ShopCardApplication extends Application {
     @Override
     public void start(Stage stage) {
         SceneManager.init(stage);
-        SceneManager.switchTo("login-view.fxml");
+        SceneManager.switchTo(Scenes.LOGIN_SCENE);
     }
 
     public static void main(String[] args) {

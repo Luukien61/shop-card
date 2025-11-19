@@ -2,6 +2,7 @@ package com.luukien.javacard.controller;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.luukien.javacard.screen.SceneManager;
+import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
 import com.luukien.javacard.utils.DatabaseHelper;
@@ -27,7 +28,20 @@ public class LoginController {
 
     @FXML
     public void initialize() {
+        if (checkLogin()) {
+            SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+        }
         loginButton.setOnAction(e -> onLoginClicked());
+    }
+
+    private boolean checkLogin() {
+        boolean isLogin = AppState.getInstance().isLogin();
+        if (isLogin) {
+            String email = AppState.getInstance().getPref(AppState.EMAIL);
+            String role = AppState.getInstance().getPref(AppState.ROLE);
+            AppState.getInstance().setCurrentUser(email, role);
+        }
+        return isLogin;
     }
 
     private void onLoginClicked() {
