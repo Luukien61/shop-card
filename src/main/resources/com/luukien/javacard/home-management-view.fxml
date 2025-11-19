@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<TabPane fx:id="tabPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="520.0" prefWidth="650.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.HomeManagementController">
+<TabPane fx:id="tabPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="520.0" prefWidth="650.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.HomeManagementController">
     <tabs>
         <Tab fx:id="orderPaneTab" text="Hoá đơn">
             <content>
@@ -67,11 +67,10 @@
                         <TableView fx:id="productTable" layoutX="33.0" layoutY="145.0" prefHeight="280.0" prefWidth="590.0">
                             <columns>
                                 <TableColumn fx:id="colProductId" prefWidth="40.666656494140625" text="ID" />
-                                <TableColumn fx:id="colProductName" prefWidth="235.33335494995117" text="Tên sản phẩm" />
-                                <TableColumn fx:id="colProductCode" prefWidth="103.33331298828125" text="Mã sản phẩm" />
-                                <TableColumn fx:id="colPrice" prefWidth="96.0" text="Giá" />
-                                <TableColumn fx:id="colRemain" minWidth="0.0" prefWidth="101.99996948242188" text="Số lượng kho" />
-                                <TableColumn prefWidth="70.0" />
+                                <TableColumn fx:id="colProductName" prefWidth="173.99999237060547" text="Tên sản phẩm" />
+                                <TableColumn fx:id="colProductCode" prefWidth="144.6666717529297" text="Mã sản phẩm" />
+                                <TableColumn fx:id="colPrice" prefWidth="132.66671752929688" text="Giá" />
+                                <TableColumn fx:id="colRemain" minWidth="0.0" prefWidth="95.99993896484375" text="Số lượng kho" />
                             </columns>
                         </TableView>
                         <Button fx:id="addNewProductBtn" disable="true" layoutX="280.0" layoutY="442.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="90.0" style="-fx-background-color: #0866FF;" text="Thêm  mới" textFill="WHITE" visible="false">

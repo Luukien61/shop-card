@@ -1,9 +1,11 @@
 package com.luukien.javacard.state;
 
 import com.luukien.javacard.model.OrderItem;
+import com.luukien.javacard.model.Product;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.prefs.Preferences;
 
@@ -20,6 +22,10 @@ public class AppState {
 
     private String currentUserRole;
     private String currentUserEmail;
+
+    @Setter
+    @Getter
+    private Product currentProduct;
 
     private AppState() {
     }

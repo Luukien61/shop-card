@@ -15,4 +15,5 @@ module com.luukien.javacard {
     exports com.luukien.javacard;
     exports com.luukien.javacard.controller;
     opens com.luukien.javacard.controller to javafx.fxml;
+    opens com.luukien.javacard.model to javafx.base;
 }

@@ -13,5 +13,6 @@ public class Scenes {
     public static final String USER_INFO_SCENE = "user-info-view.fxml";
     public static final String USER_LIST_SCENE = "user-list-view.fxml";
     public static final String VERIFY_PAYMENT_SCENE = "verify-payment-view.fxml";
+    public static final String PRODUCT_DETAIL_SCENE = "product-detail-view.fxml";
 
 }
