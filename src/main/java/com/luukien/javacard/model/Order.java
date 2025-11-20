@@ -1,20 +1,31 @@
 package com.luukien.javacard.model;
 
+import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-public record Order(
-        Long id,
-        String code,
-        Long userId,
-        BigDecimal totalPrice,
-        LocalDateTime createAt
-) {
+@Getter
+@AllArgsConstructor
+@Builder
+@ToString
+@EqualsAndHashCode
+public class Order {
+
+    private final Long id;
+    private final String code;
+    private final Long userId;
+    private final BigDecimal totalPrice;
+    private final LocalDateTime createAt;
+
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
     public String getFormattedTotal() {
         return String.format("%,.0f ₫", totalPrice);
     }
 
     public String getFormattedDate() {
-        return createAt != null ? createAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : "";
+        return createAt != null ? createAt.format(DATE_FORMATTER) : "";
     }
 }

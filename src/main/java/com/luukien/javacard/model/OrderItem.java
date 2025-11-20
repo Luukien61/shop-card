@@ -1,15 +1,22 @@
 package com.luukien.javacard.model;
 
+import lombok.*;
 import java.math.BigDecimal;
 
-public record OrderItem(
-        Long id,
-        String orderCode,
-        String productCode,
-        String productName,
-        long quantity,
-        BigDecimal price
-) {
+@Getter
+@AllArgsConstructor
+@Builder
+@ToString
+@EqualsAndHashCode
+public class OrderItem {
+
+    private final Long id;
+    private final String orderCode;
+    private final String productCode;
+    private final String productName;
+    private final long quantity;
+    private final BigDecimal price;
+
     public BigDecimal getSubTotal() {
         return price.multiply(BigDecimal.valueOf(quantity));
     }

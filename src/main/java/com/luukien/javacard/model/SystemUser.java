@@ -1,8 +1,16 @@
 package com.luukien.javacard.model;
 
-public record SystemUser(
-        Long id,
-        String email,
-        String password,  // đã hash bằng BCrypt
-        String role       // "ADMIN" hoặc "STAFF"
-) {}
+import lombok.*;
+
+@Getter
+@AllArgsConstructor
+@Builder
+@ToString(exclude = "password")
+@EqualsAndHashCode
+public class SystemUser {
+
+    private final Long id;
+    private final String email;
+    private final String password;
+    private final String role;
+}

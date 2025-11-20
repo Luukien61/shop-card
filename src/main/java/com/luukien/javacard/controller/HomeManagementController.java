@@ -1,9 +1,11 @@
 package com.luukien.javacard.controller;
 
 import com.luukien.javacard.model.Product;
+import com.luukien.javacard.model.User;
 import com.luukien.javacard.model.UserRole;
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
+import com.luukien.javacard.service.ProductService;
 import com.luukien.javacard.sql.SqlQueries;
 import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
@@ -77,24 +79,34 @@ public class HomeManagementController {
     private TextField productFilterTextField;
     @FXML
     private Button filterProductBtn;
+
+
     @FXML
-    private TableView userTable;
+    private TableView<User> userTable;
     @FXML
-    private TableColumn colUserName;
+    private TableColumn<User, String> colUserName;
     @FXML
-    private TableColumn colPhone;
+    private TableColumn<User, String> colPhone;
     @FXML
-    private TableColumn colClass;
+    private TableColumn<User, String> colClass;
     @FXML
-    private TableColumn colAddress;
+    private TableColumn<User, String> colAddress;
+
+    private final ObservableList<User> userData = FXCollections.observableArrayList();
+
+
+
     @FXML
-    private TextField phoneSearchTextField;
+    private TextField userFilterTextField;
     @FXML
     private Button searchUserBtn;
     @FXML
     private Button addNewUserBtn;
     @FXML
     private Button logoutBtn;
+
+
+    private final ProductService productService = ProductService.getInstance();
 
     @FXML
     public void initialize() {
@@ -159,18 +171,6 @@ public class HomeManagementController {
         filterProductBtn.setOnAction(e -> filterProductByNameOrCode());
     }
 
-    private void filterProductByNameOrCode() {
-        String filter = productFilterTextField.getText().trim();
-        if(filter.isBlank()){
-            handleProductTabSelected();
-        }else {
-            List<Product> items = filterProducts(filter);
-            productData.clear();
-            if (!items.isEmpty()) {
-                productData.setAll(items);
-            }
-        }
-    }
 
     private void initializeOrderTab() {
         orderPaneTab.setOnSelectionChanged(event -> {
@@ -181,6 +181,13 @@ public class HomeManagementController {
     }
 
     private void initializeUserTab() {
+        userTable.setItems(userData);
+        colUserName.setCellValueFactory(new PropertyValueFactory<>("userName"));
+        colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+        colAddress.setCellValueFactory(new PropertyValueFactory<>("address"));
+
+
+
         userPaneTab.setOnSelectionChanged(event -> {
             if (userPaneTab.isSelected()) {
 
@@ -193,52 +200,23 @@ public class HomeManagementController {
     }
 
     private void handleProductTabSelected() {
-        List<Product> items = loadProducts();
+        List<Product> items = productService.loadProducts();
         if (!items.isEmpty()) {
             productData.setAll(items);
         }
     }
 
-    private List<Product> loadProducts() {
-        List<Product> items = new ArrayList<>();
-        try (Connection conn = DatabaseHelper.getConnection()) {
-            if (conn == null) throw new RuntimeException(ApplicationHelper.CONN_DB_MESSAGE);
-            try (PreparedStatement ps = conn.prepareStatement(SqlQueries.getInstance().getGET_PRODUCTS())) {
-                return getProducts(items, ps);
+    private void filterProductByNameOrCode() {
+        String filter = productFilterTextField.getText().trim();
+        if (filter.isBlank()) {
+            handleProductTabSelected();
+        } else {
+            List<Product> items = productService.filterProducts(filter);
+            productData.clear();
+            if (!items.isEmpty()) {
+                productData.setAll(items);
             }
-        } catch (Exception e) {
-            ApplicationHelper.showAlert(e.getMessage(), true);
         }
-        return items;
-    }
-
-    private List<Product> filterProducts(String filter) {
-        List<Product> items = new ArrayList<>();
-        try (Connection conn = DatabaseHelper.getConnection()) {
-            if (conn == null) throw new RuntimeException(ApplicationHelper.CONN_DB_MESSAGE);
-            try (PreparedStatement ps = conn.prepareStatement(SqlQueries.getInstance().getFILTER_PRODUCT_BY_NAME_OR_CODE())) {
-                ps.setString(1, filter);
-                return getProducts(items, ps);
-            }
-        } catch (Exception e) {
-            ApplicationHelper.showAlert(e.getMessage(), true);
-        }
-        return items;
-    }
-
-    private List<Product> getProducts(List<Product> items, PreparedStatement ps) throws SQLException {
-        ResultSet rs = ps.executeQuery();
-
-        while (rs.next()) {
-            String name = rs.getString("name");
-            String code = rs.getString("code");
-            Long id = rs.getLong("id");
-            int remain = rs.getInt("remain");
-            BigDecimal price = rs.getBigDecimal("price");
-            Product product = new Product(id, code, name, remain, price);
-            items.add(product);
-        }
-        return items;
     }
 
 
