@@ -11,7 +11,7 @@ public class DatabaseHelper {
 
     private static final String URL = "jdbc:postgresql://localhost:5432/shop";
     private static final String USER = "postgres";
-    private static final String PASSWORD = "12345678";
+    private static final String PASSWORD = "Dat27102003";
 
     public static Connection getConnection() throws SQLException {
         try {
