@@ -119,6 +119,7 @@ public class HomeManagementController {
             addNewUserBtn.setVisible(true);
         }
         addNewProductBtn.setOnAction(e -> onNewProductBtnClick());
+        addNewUserBtn.setOnAction(e -> onNewUserBtnClick());
 
         initializeProductTab();
         initializeOrderTab();
@@ -199,6 +200,10 @@ public class HomeManagementController {
 
     private void onNewProductBtnClick() {
         SceneManager.switchTo(Scenes.ADD_PRODUCT_SCENE);
+    }
+
+    private void onNewUserBtnClick(){
+        SceneManager.switchTo(Scenes.INITIAL_CARD_SCENE);
     }
 
     private void handleProductTabSelected() {
