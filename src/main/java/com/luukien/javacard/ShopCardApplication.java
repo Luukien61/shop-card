@@ -2,6 +2,7 @@ package com.luukien.javacard;
 
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
+import com.luukien.javacard.utils.CardHelper;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -12,6 +13,7 @@ import java.io.IOException;
 public class ShopCardApplication extends Application {
     @Override
     public void start(Stage stage) {
+        CardHelper.connect();
         SceneManager.init(stage);
         SceneManager.switchTo(Scenes.LOGIN_SCENE);
     }

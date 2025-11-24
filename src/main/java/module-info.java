@@ -10,6 +10,7 @@ module com.luukien.javacard {
     requires static lombok;
     requires bcrypt;
     requires java.prefs;
+    requires java.smartcardio;
 
     opens com.luukien.javacard to javafx.fxml;
     exports com.luukien.javacard;
