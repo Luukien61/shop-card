@@ -115,6 +115,8 @@ public class HomeManagementController {
         if (role.equals(UserRole.ADMIN.toString())) {
             addNewProductBtn.setDisable(false);
             addNewProductBtn.setVisible(true);
+            addNewUserBtn.setDisable(false);
+            addNewUserBtn.setVisible(true);
         }
         addNewProductBtn.setOnAction(e -> onNewProductBtnClick());
 
