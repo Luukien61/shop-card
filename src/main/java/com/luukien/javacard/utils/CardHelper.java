@@ -58,7 +58,7 @@ public class CardHelper {
         return new CommandAPDU(0x00, 0xA4, 0x04, 0x00, aid);
     }
 
-    public static void initiateCard(String username, String address, String phone, String userPIN, String adminPIN, File avatar) {
+    public static String[] initiateCard(String username, String address, String phone, String userPIN, String adminPIN, File avatar) {
         try {
             CardChannel channel = connect();
             CommandAPDU select = selectAID(AID);
@@ -75,7 +75,8 @@ public class CardHelper {
             byte[] addressData = address.getBytes(StandardCharsets.UTF_8);
 //            byte[] dateOfBirthData = user.getDateOfBirth().toString().getBytes(StandardCharsets.UTF_8);
             byte[] phoneData = phone.getBytes(StandardCharsets.UTF_8);
-            byte[] cardIdData = generate16Digits().getBytes(StandardCharsets.UTF_8);
+            String cardId = generate16Digits();
+            byte[] cardIdData = cardId.getBytes(StandardCharsets.UTF_8);
             byte[] userPINData = userPIN.getBytes(StandardCharsets.UTF_8);
             byte[] adminPINData = adminPIN.getBytes(StandardCharsets.UTF_8);
 
@@ -91,8 +92,10 @@ public class CardHelper {
             sendData(channel, INS_WRITE_USER_PIN, userPINData);
             sendData(channel, INS_WRITE_ADMIN_PIN, adminPINData);
             sendData(channel, INS_WRITE_AVATAR, avatarData);
+            return new String[]{publicKey, cardId};
         } catch (Exception e) {
             System.out.println(e.getMessage());
+            return null;
         }
     }
 
@@ -168,16 +171,5 @@ public class CardHelper {
         return resizedImage;
     }
 
-    private static String toHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02X", b & 0xFF));
-        }
-        return sb.toString();
-    }
-
-    public static String toHex(byte b) {
-        return String.format("%02X", b & 0xFF);
-    }
 
 }
