@@ -11,6 +11,7 @@ module com.luukien.javacard {
     requires bcrypt;
     requires java.prefs;
     requires java.smartcardio;
+    requires java.desktop;
 
     opens com.luukien.javacard to javafx.fxml;
     exports com.luukien.javacard;
