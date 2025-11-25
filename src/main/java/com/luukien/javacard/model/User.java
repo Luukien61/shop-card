@@ -24,6 +24,8 @@ public class User {
     private String cardId;
     private String publicKey;
     private BigDecimal balance;
+    private String memberTier;
+    private BigDecimal quarter_spending;
 
     public String getFormattedBalance() {
         if (balance == null) {

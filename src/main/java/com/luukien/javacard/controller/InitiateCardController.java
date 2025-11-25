@@ -1,10 +1,23 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.utils.CardHelper;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
+
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +47,7 @@ public class InitiateCardController {
     private Button finishBtn;
 
     private File selectedImageFile = null;
+    private byte[] selectedImageBytes;
 
 
     @FXML
@@ -47,7 +61,6 @@ public class InitiateCardController {
     private void onChooseImage() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Chọn ảnh");
-
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
         );
@@ -58,7 +71,42 @@ public class InitiateCardController {
             selectedImageFile = file;
             Image image = new Image(file.toURI().toString());
             imageView.setImage(image);
+            try {
+                BufferedImage original = ImageIO.read(file);
+                BufferedImage resized = resize(original, 200, 200);
+                selectedImageBytes = compressImage(resized, 0.6f);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+    }
+
+
+    private byte[] compressImage(BufferedImage image, float quality) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+        ImageWriteParam param = writer.getDefaultWriteParam();
+
+        if (param.canWriteCompressed()) {
+            param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            param.setCompressionQuality(quality); // 0.0f → thấp nhất, 1.0f → tốt nhất
+        }
+
+        writer.setOutput(new MemoryCacheImageOutputStream(baos));
+        writer.write(null, new IIOImage(image, null, null), param);
+        writer.dispose();
+
+        return baos.toByteArray();
+    }
+
+    private BufferedImage resize(BufferedImage originalImage, int targetWidth, int targetHeight) {
+        BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = resizedImage.createGraphics();
+        g.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
+        g.dispose();
+        return resizedImage;
     }
 
 
@@ -78,16 +126,9 @@ public class InitiateCardController {
             genderSelected = "Nữ";
         }
 
-
         String imagePath = selectedImageFile != null ? selectedImageFile.getAbsolutePath() : null;
 
-
-        System.out.println("Tên: " + username);
-        System.out.println("Ngày sinh: " + birthDate);
-        System.out.println("Giới tính: " + genderSelected);
-        System.out.println("SĐT: " + phone);
-        System.out.println("Địa chỉ: " + address);
-        System.out.println("Ảnh: " + imagePath);
+        CardHelper.initiateCard(username, address, phone, "123456", "123456", selectedImageFile);
 
 
     }
