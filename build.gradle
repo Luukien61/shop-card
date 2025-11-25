@@ -52,6 +52,8 @@ dependencies {
 
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
     compileOnly("org.projectlombok:lombok:1.18.42")
+    // https://mvnrepository.com/artifact/com.cloudinary/cloudinary-http45
+    implementation("com.cloudinary:cloudinary-http45:1.39.0")
 }
 
 test {

@@ -1,10 +1,9 @@
 package com.luukien.javacard.utils;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+
+import java.sql.*;
+import java.time.LocalDate;
 
 
 public class DatabaseHelper {
@@ -19,6 +18,44 @@ public class DatabaseHelper {
         } catch (SQLException e) {
             System.err.println("Kết nối DB thất bại: " + e.getMessage());
             return null;
+        }
+    }
+
+    public static boolean insertUser(String userName,
+                                     String address,
+                                     String imageBase64,
+                                     LocalDate dateOfBirth,
+                                     String gender,
+                                     String phone,
+                                     String cardId,
+                                     String publicKey) {
+
+        String sql = """
+                INSERT INTO users (
+                    user_name, address, image, date_of_birth, gender,
+                    phone, card_id, public_key, balance
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.0)
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userName);
+            pstmt.setString(2, address);
+            pstmt.setString(3, imageBase64);
+            pstmt.setDate(4, Date.valueOf(dateOfBirth));
+            pstmt.setString(5, gender);
+            pstmt.setString(6, phone);
+            pstmt.setString(7, cardId);
+            pstmt.setString(8, publicKey);
+
+            int rows = pstmt.executeUpdate();
+            return rows > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi thêm user vào DB: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
     }
 

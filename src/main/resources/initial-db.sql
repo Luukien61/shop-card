@@ -13,6 +13,7 @@ create table users
     address            varchar(255) not null,
     image              text         not null,
     date_of_birth      date         not null,
+    gender             varchar(5),
     phone              varchar(11)  not null unique,
     card_id            varchar(16)  not null unique,
     public_key         text         not null,
@@ -96,5 +97,4 @@ ALTER TABLE products
 CREATE INDEX IF NOT EXISTS idx_products_search_vector ON products USING GIN (search_vector);
 
 
-
-
+alter table users drop column pin;

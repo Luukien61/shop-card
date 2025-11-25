@@ -12,6 +12,7 @@ module com.luukien.javacard {
     requires java.prefs;
     requires java.smartcardio;
     requires java.desktop;
+    requires cloudinary.core;
 
     opens com.luukien.javacard to javafx.fxml;
     exports com.luukien.javacard;
