@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+      alignment="CENTER" spacing="20" style="-fx-background-color: white;"
+      fx:controller="com.luukien.javacard.controller.VerifyPinController">
+    <padding>
+        <Insets top="30" right="40" bottom="30" left="40"/>
+    </padding>
+
+    <Label text="Xác thực PIN" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+
+    <Label fx:id="headerLabel" text="Vui lòng nhập mã PIN để tiếp tục"
+           style="-fx-font-size: 14; -fx-text-fill: #555;" textAlignment="CENTER"/>
+
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Label text="PIN:" style="-fx-font-weight: bold;"/>
+        <PasswordField fx:id="pinTextField" promptText="6 chữ số" prefWidth="180"/>
+    </HBox>
+
+    <Label fx:id="attemptLeftLabel" text="Còn 5 lần thử"
+           style="-fx-font-weight: bold; -fx-text-fill: #1565c0;"/>
+
+    <Label fx:id="errorLabel" text="" style="-fx-text-fill: red; -fx-font-size: 13;"/>
+
+    <HBox spacing="20" alignment="CENTER">
+        <Button fx:id="cancelBtn" text="Hủy" prefWidth="100" cancelButton="true"/>
+        <Button fx:id="doneBtn" text="Xác nhận" prefWidth="100" defaultButton="true"/>
+    </HBox>
+</VBox>

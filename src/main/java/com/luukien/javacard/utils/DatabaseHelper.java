@@ -1,7 +1,10 @@
 package com.luukien.javacard.utils;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
+import com.luukien.javacard.model.Product;
+import com.luukien.javacard.state.AppState;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
 
@@ -65,10 +68,10 @@ public class DatabaseHelper {
 
             // Insert admin
             assert conn != null;
-            insertUser(conn, "admin@gmail.com", "admin123", "ADMIN");
+            insertUser(conn, "admin@gmail.com", "admin123", "ADMIN", "123456");
 
             // Insert staff
-            insertUser(conn, "staff@gmail.com", "12345678", "STAFF");
+            insertUser(conn, "staff@gmail.com", "12345678", "STAFF", null);
 
             System.out.println("Users created successfully!");
 
@@ -77,18 +80,69 @@ public class DatabaseHelper {
         }
     }
 
-    private static void insertUser(Connection conn, String email, String pass, String role) throws SQLException {
+    private static void insertUser(Connection conn, String email, String pass, String role, String pin) throws SQLException {
 
-        String hashPassword = BCrypt.withDefaults().hashToString(12, pass.toCharArray()); // 2^12 = 4.096
+        String hashPassword = BCrypt.withDefaults().hashToString(12, pass.toCharArray());
 
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setString(1, email);
-        ps.setString(2, hashPassword);
-        ps.setString(3, role);
-        ps.executeUpdate();
-        ps.close();
+        if (pin != null && !pin.isEmpty()) {
+
+            String sql = "INSERT INTO system_users(email, password, role, pin) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, email);
+                ps.setString(2, hashPassword);
+                ps.setString(3, role);
+
+                String hashPin = BCrypt.withDefaults().hashToString(12, pin.toCharArray());
+                ps.setString(4, hashPin);
+
+                ps.executeUpdate();
+            }
+        } else {
+
+            String sql = "INSERT INTO system_users(email, password, role) VALUES (?, ?, ?)";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, email);
+                ps.setString(2, hashPassword);
+                ps.setString(3, role);
+                ps.executeUpdate();
+            }
+        }
     }
 
-    private static final String sql =
-            "INSERT INTO system_users(email, password, role) VALUES (?, ?, ?)";
+    public static boolean verifySysUserPin(String plainPIN) {
+        String currentUserEmail = AppState.getInstance().getCurrentUserEmail();
+
+        if (currentUserEmail == null || currentUserEmail.isEmpty()) {
+            return false;
+        }
+
+        String sql = "SELECT pin FROM system_users WHERE email = ?";
+
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            assert conn != null;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                ps.setString(1, currentUserEmail);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String hashedPin = rs.getString("pin");
+
+                        if (hashedPin == null || hashedPin.isEmpty()) {
+                            return false;
+                        }
+
+                        boolean verified = BCrypt.verifyer().verify(plainPIN.toCharArray(), hashedPin).verified;
+                        System.out.println("Verify: " + verified);
+                        return verified;
+                    }
+                    return false;
+                }
+
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi kiểm tra PIN hệ thống: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

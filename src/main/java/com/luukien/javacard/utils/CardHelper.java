@@ -1,5 +1,8 @@
 package com.luukien.javacard.utils;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
+import com.luukien.javacard.state.AppState;
+
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
@@ -13,6 +16,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
@@ -170,6 +177,5 @@ public class CardHelper {
         g.dispose();
         return resizedImage;
     }
-
 
 }
