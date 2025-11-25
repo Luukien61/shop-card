@@ -3,6 +3,7 @@ package com.luukien.javacard;
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.utils.CardHelper;
+import com.luukien.javacard.utils.DatabaseHelper;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;

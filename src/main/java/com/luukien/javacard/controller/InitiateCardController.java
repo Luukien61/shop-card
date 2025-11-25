@@ -1,9 +1,8 @@
 package com.luukien.javacard.controller;
 
-import com.luukien.javacard.utils.ApplicationHelper;
-import com.luukien.javacard.utils.CardHelper;
-import com.luukien.javacard.utils.CloudinaryHelper;
-import com.luukien.javacard.utils.DatabaseHelper;
+import com.luukien.javacard.screen.SceneManager;
+import com.luukien.javacard.screen.Scenes;
+import com.luukien.javacard.utils.*;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -15,6 +14,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.Base64;
+
+import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 
 public class InitiateCardController {
 
@@ -78,47 +79,60 @@ public class InitiateCardController {
         String genderSelected = menGender.isSelected() ? "Nam" : womenGender.isSelected() ? "Nữ" : "";
 
         if (username.isEmpty() || birthDate == null || phone.isEmpty() || address.isEmpty() || selectedImageFile == null) {
-            ApplicationHelper.showAlert("Vui lòng điền đầy đủ thông tin!", true);
+            showAlert("Vui lòng điền đầy đủ thông tin!", true);
             return;
         }
 
-        ApplicationHelper.showPinDialog().ifPresent(pin -> {
-            String[] result = CardHelper.initiateCard(username, address, phone, pin, "123456", selectedImageFile);
+        ApplicationHelper
+                .showPinDialog("Khởi tạo PIN", "Nhập PIN mới cho tài khoản").ifPresent(userPin -> {
+                    PinDialog.show(
+                            "Quản trị viên",
+                            null,
+                            5,
+                            DatabaseHelper::verifySysUserPin,
+                            () -> {},
+                            () -> showAlert("Thẻ bị khóa tạm thời!", true)    // khi sai quá 5 lần
+                    );
+                });
 
-            if (result == null) {
-                ApplicationHelper.showAlert("Không thể khởi tạo thẻ! Vui lòng thử lại.", true);
-                return;
-            }
-
-            String publicKey = result[0];
-            String cardId = result[1];
-
-            String imageBase64;
-            try {
-                byte[] imageBytes = Files.readAllBytes(selectedImageFile.toPath());
-                imageBase64 = Base64.getEncoder().encodeToString(imageBytes);
-            } catch (IOException e) {
-                ApplicationHelper.showAlert("Không thể đọc file ảnh!", true);
-                return;
-            }
-            String uploadImage = CloudinaryHelper.uploadImage(selectedImageFile);
-
-            boolean success = DatabaseHelper.insertUser(
-                    username,
-                    address,
-                    uploadImage,
-                    birthDate,
-                    genderSelected,
-                    phone,
-                    cardId,
-                    publicKey
-            );
-
-            if (success) {
-                ApplicationHelper.showAlert("Khởi tạo thẻ thành công!\nCard ID: " + cardId, false);
-            } else {
-                ApplicationHelper.showAlert("Thêm người dùng vào CSDL thất bại!", true);
-            }
-        });
     }
 }
+/*
+String[] result = CardHelper.initiateCard(username, address, phone, userPin, adminPin, selectedImageFile);
+
+                        if (result == null) {
+                            ApplicationHelper.showAlert("Không thể khởi tạo thẻ! Vui lòng thử lại.", true);
+                            return;
+                        }
+
+                        String publicKey = result[0];
+                        String cardId = result[1];
+
+                        String imageBase64;
+                        try {
+                            byte[] imageBytes = Files.readAllBytes(selectedImageFile.toPath());
+                            imageBase64 = Base64.getEncoder().encodeToString(imageBytes);
+                        } catch (IOException e) {
+                            ApplicationHelper.showAlert("Không thể đọc file ảnh!", true);
+                            return;
+                        }
+                        String uploadImage = CloudinaryHelper.uploadImage(selectedImageFile);
+
+                        boolean success = DatabaseHelper.insertUser(
+                                username,
+                                address,
+                                uploadImage,
+                                birthDate,
+                                genderSelected,
+                                phone,
+                                cardId,
+                                publicKey
+                        );
+
+                        if (success) {
+                            ApplicationHelper.showAlert("Khởi tạo thẻ thành công!\nCard ID: " + cardId, false);
+                            SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+                        } else {
+                            ApplicationHelper.showAlert("Thêm người dùng vào CSDL thất bại!", true);
+                        }
+ */
