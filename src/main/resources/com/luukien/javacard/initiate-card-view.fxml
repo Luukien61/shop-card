@@ -15,7 +15,7 @@
 <?import javafx.scene.text.Font?>
 
 
-  <AnchorPane prefHeight="500.0" prefWidth="650.0" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.InitiateCardController">
+  <AnchorPane prefHeight="500.0" prefWidth="650.0" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.InitiateCardController">
       <children>
           <GridPane alignment="CENTER" hgap="18.0" layoutX="33.0" layoutY="106.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="276.0" prefWidth="419.0" style="-fx-border-color: #EBEBEB; -fx-padding: 6;">
               <columnConstraints>

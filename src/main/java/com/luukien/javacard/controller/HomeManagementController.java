@@ -6,6 +6,7 @@ import com.luukien.javacard.model.UserRole;
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.service.ProductService;
+import com.luukien.javacard.service.UserService;
 import com.luukien.javacard.sql.SqlQueries;
 import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
@@ -95,7 +96,6 @@ public class HomeManagementController {
     private final ObservableList<User> userData = FXCollections.observableArrayList();
 
 
-
     @FXML
     private TextField userFilterTextField;
     @FXML
@@ -107,10 +107,12 @@ public class HomeManagementController {
 
 
     private final ProductService productService = ProductService.getInstance();
+    private final UserService userService = UserService.getInstance();
 
     @FXML
     public void initialize() {
         orderdatePicker.setConverter(DateConverter.getLocalDateConverter());
+
         String role = AppState.getInstance().getCurrentUserRole();
         if (role.equals(UserRole.ADMIN.toString())) {
             addNewProductBtn.setDisable(false);
@@ -174,7 +176,6 @@ public class HomeManagementController {
         filterProductBtn.setOnAction(e -> filterProductByNameOrCode());
     }
 
-
     private void initializeOrderTab() {
         orderPaneTab.setOnSelectionChanged(event -> {
             if (orderPaneTab.isSelected()) {
@@ -188,12 +189,44 @@ public class HomeManagementController {
         colUserName.setCellValueFactory(new PropertyValueFactory<>("userName"));
         colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
         colAddress.setCellValueFactory(new PropertyValueFactory<>("address"));
+        colClass.setCellValueFactory(new PropertyValueFactory<>("memberTier"));
 
+        colUserName.setCellFactory(tc -> new TableCell<>() {
+            private final Label label = new Label();
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    label.setText(item);
+                    label.setStyle("-fx-underline: true; -fx-text-fill: #0066cc; -fx-cursor: hand;");
+
+                    label.setOnMouseEntered(e -> label.setStyle("-fx-underline: true; -fx-text-fill: #0055aa; -fx-cursor: hand;"));
+                    label.setOnMouseExited(e -> label.setStyle("-fx-underline: true; -fx-text-fill: #0066cc; -fx-cursor: hand;"));
+
+                    label.setOnMouseClicked(e -> {
+                        User user =  getTableRow().getItem();
+                        if (user != null && e.getClickCount() == 1) {
+                            AppState.getInstance().setCurrentClientPhone(user.getPhone());
+                            SceneManager.switchTo(Scenes.USER_INFO_SCENE);
+                        }
+                    });
+
+                    setGraphic(label);
+                }
+            }
+        });
 
 
         userPaneTab.setOnSelectionChanged(event -> {
             if (userPaneTab.isSelected()) {
-
+                List<User> items = userService.loadUsers();
+                if (!items.isEmpty()) {
+                    userData.setAll(items);
+                }
             }
         });
     }
@@ -202,7 +235,7 @@ public class HomeManagementController {
         SceneManager.switchTo(Scenes.ADD_PRODUCT_SCENE);
     }
 
-    private void onNewUserBtnClick(){
+    private void onNewUserBtnClick() {
         SceneManager.switchTo(Scenes.INITIAL_CARD_SCENE);
     }
 

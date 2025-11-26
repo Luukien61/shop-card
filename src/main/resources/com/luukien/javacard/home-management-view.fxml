@@ -117,7 +117,7 @@
                                 <Font name="System Bold" size="14.0" />
                             </font>
                         </Label>
-                        <TextField fx:id="userFilterTextField" layoutX="26.0" layoutY="72.0" prefHeight="25.0" prefWidth="237.0" promptText="Hộ tên, số điện thoại">
+                        <TextField fx:id="userFilterTextField" layoutX="26.0" layoutY="72.0" prefHeight="25.0" prefWidth="237.0" promptText="Họ tên, số điện thoại">
                      <font>
                         <Font size="14.0" />
                      </font></TextField>
