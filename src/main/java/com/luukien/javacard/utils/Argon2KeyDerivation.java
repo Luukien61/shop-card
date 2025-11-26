@@ -2,6 +2,7 @@ package com.luukien.javacard.utils;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.params.Argon2Parameters;
+
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -10,15 +11,55 @@ import javax.crypto.spec.GCMParameterSpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 
 public class Argon2KeyDerivation {
 
-    // Cấu hình Argon2
     private static final int ITERATIONS = 3;
     private static final int MEMORY_KB = 65536; // 64MB
     private static final int PARALLELISM = 4;
     private static final int KEK_LENGTH = 32; // 256 bits cho KEK (Key Encryption Key)
+    public static final int SALT_LENGTH = 32;
+
+
+    public static String createEncryptedKey(String password) throws Exception {
+        byte[] salt = new byte[SALT_LENGTH];
+        new SecureRandom().nextBytes(salt);
+
+        byte[] kek = deriveKEK(password, salt);
+        SecretKey aesKey = generateAESKey();
+        return wrapExistKey(aesKey, salt, kek);
+    }
+
+
+    public static SecretKey recoverAesKey(String wrappedData, String enteredPassword) throws Exception {
+        byte[] blob = Base64.getDecoder().decode(wrappedData);
+
+        byte[] salt = Arrays.copyOfRange(blob, 0, SALT_LENGTH);
+        byte[] wrapped = Arrays.copyOfRange(blob, SALT_LENGTH, blob.length);
+
+        byte[] kek = deriveKEK(enteredPassword, salt);
+
+        return unwrapAESKey(wrapped, kek);
+    }
+
+    public static String updateWrappedKey(String wrappedData, String oldPass, String newPass) throws Exception {
+        SecretKey aesKey = recoverAesKey(wrappedData, oldPass);
+        byte[] salt = new byte[SALT_LENGTH];
+        new SecureRandom().nextBytes(salt);
+        byte[] kek = deriveKEK(newPass, salt);
+        return wrapExistKey(aesKey, salt, kek);
+    }
+
+    private static String wrapExistKey(SecretKey aesKey, byte[] salt, byte[] kek) throws Exception {
+        byte[] wrapped = wrapAESKey(aesKey, kek);
+        byte[] blob = new byte[salt.length + wrapped.length];
+        System.arraycopy(salt, 0, blob, 0, salt.length);
+        System.arraycopy(wrapped, 0, blob, salt.length, wrapped.length);
+
+        return Base64.getEncoder().encodeToString(blob);
+    }
 
     /**
      * Dẫn xuất KEK (Key Encryption Key) từ password bằng Argon2
@@ -33,7 +74,7 @@ public class Argon2KeyDerivation {
                 .withSalt(salt);
 
         Argon2BytesGenerator gen = new Argon2BytesGenerator();
-        
+
         gen.init(builder.build());
 
         byte[] kek = new byte[KEK_LENGTH];
