@@ -12,6 +12,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.stage.Stage;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -20,7 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 
-public class UserInfoController {
+public class UserInfoController  {
 
     @FXML
     private TextField cardIdTextField;
@@ -191,9 +192,11 @@ public class UserInfoController {
         changePinBtn.setVisible(isAdmin);
         changePinBtn.setManaged(isAdmin);
         changePinBtn.setDisable(!isAdmin);
+        changePinBtn.setOnAction(e -> SceneManager.showModal(Scenes.UPDATE_PIN_SCENE));
 
         backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
     }
+
 
 
 }

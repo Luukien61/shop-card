@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.luukien.javacard.controller.UpdateUserPinController"
+      alignment="CENTER" spacing="20" style="-fx-background-color: white;"
+      prefWidth="400" prefHeight="380">
+
+    <padding>
+        <Insets top="30" right="40" bottom="30" left="40"/>
+    </padding>
+
+    <!-- Tiêu đề -->
+    <Label text="Đổi PIN thẻ" alignment="CENTER">
+        <font>
+            <Font name="System Bold" size="22"/>
+        </font>
+        <VBox.margin>
+            <Insets bottom="10"/>
+        </VBox.margin>
+    </Label>
+
+    <Label text="Vui lòng nhập đầy đủ thông tin để đổi PIN (6 chữ số)"
+           alignment="CENTER" wrapText="true" style="-fx-text-fill: #666;" />
+
+    <Separator />
+
+    <!-- PIN hiện tại -->
+    <VBox spacing="8">
+        <Label text="PIN hiện tại" style="-fx-font-weight: bold;" />
+        <PasswordField fx:id="currentPinField" promptText="Nhập PIN hiện tại (6 số)">
+            <VBox.margin>
+                <Insets bottom="10"/>
+            </VBox.margin>
+        </PasswordField>
+        <TextField fx:id="currentPinText" promptText="Nhập PIN hiện tại (6 số)" visible="false" managed="false"/>
+        <CheckBox fx:id="showCurrentPinCheck" text="Hiển thị PIN" selected="false">
+            <VBox.margin>
+                <Insets left="5"/>
+            </VBox.margin>
+        </CheckBox>
+    </VBox>
+
+    <!-- PIN mới -->
+    <VBox spacing="8">
+        <Label text="PIN mới" style="-fx-font-weight: bold;" />
+        <PasswordField fx:id="newPinField" promptText="Nhập PIN mới (6 số)">
+            <VBox.margin>
+                <Insets bottom="10"/>
+            </VBox.margin>
+        </PasswordField>
+        <TextField fx:id="newPinText" promptText="Nhập PIN mới (6 số)" visible="false" managed="false"/>
+        <CheckBox fx:id="showNewPinCheck" text="Hiển thị PIN" selected="false"/>
+    </VBox>
+
+    <!-- Xác nhận PIN mới -->
+    <VBox spacing="8">
+        <Label text="Xác nhận PIN mới" style="-fx-font-weight: bold;" />
+        <PasswordField fx:id="confirmPinField" promptText="Nhập lại PIN mới">
+            <VBox.margin>
+                <Insets bottom="20"/>
+            </VBox.margin>
+        </PasswordField>
+        <TextField fx:id="confirmPinText" promptText="Nhập lại PIN mới" visible="false" managed="false"/>
+        <CheckBox fx:id="showConfirmPinCheck" text="Hiển thị PIN" selected="false"/>
+    </VBox>
+
+    <!-- Nút hành động -->
+    <HBox alignment="CENTER_RIGHT" spacing="15">
+        <Button text="Hủy" style="-fx-text-fill: #666;" onAction="#onCancel" />
+        <Button text="Đổi PIN" styleClass="btn-primary" style="-fx-background-color: #2563eb; -fx-text-fill: white;"
+                onAction="#onChangePin" defaultButton="true" />
+    </HBox>
+</VBox>
