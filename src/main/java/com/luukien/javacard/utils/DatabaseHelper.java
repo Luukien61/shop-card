@@ -73,18 +73,21 @@ public class DatabaseHelper {
 
             System.out.println("Users created successfully!");
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void insertUser(Connection conn, String email, String pass, String role, String pin) throws SQLException {
+    private static void insertUser(Connection conn, String email, String pass, String role, String pin) throws Exception {
 
         String hashPassword = BCrypt.withDefaults().hashToString(12, pass.toCharArray());
 
         if (pin != null && !pin.isEmpty()) {
+            String encryptedKey = Argon2KeyDerivation.createEncryptedKey(pass);
+            String encryptedPin = Argon2KeyDerivation.encryptData(pin, encryptedKey, pass);
 
-            String sql = "INSERT INTO system_users(email, password, role, pin) VALUES (?, ?, ?, ?)";
+
+            String sql = "INSERT INTO system_users(email, password, role, pin_hash, pin_encrypted, master_key_encrypted) VALUES (?, ?, ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, email);
                 ps.setString(2, hashPassword);
@@ -92,6 +95,8 @@ public class DatabaseHelper {
 
                 String hashPin = BCrypt.withDefaults().hashToString(12, pin.toCharArray());
                 ps.setString(4, hashPin);
+                ps.setString(5, encryptedPin);
+                ps.setString(6, encryptedKey);
 
                 ps.executeUpdate();
             }

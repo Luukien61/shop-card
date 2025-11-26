@@ -138,11 +138,18 @@
             <content>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="500.0" prefWidth="650.0">
                     <children>
-                        <Button fx:id="logoutBtn" layoutX="299.0" layoutY="333.0" mnemonicParsing="false" style="-fx-background-color: #ff0000;" text="Đăng xuất" textFill="WHITE">
+                        <Button fx:id="logoutBtn" layoutX="281.0" layoutY="336.0" mnemonicParsing="false" style="-fx-background-color: #ff0000;" text="Đăng xuất" textFill="WHITE">
                             <font>
                                 <Font name="System Bold" size="14.0" />
                             </font>
                         </Button>
+                  <Label fx:id="pinLabel" layoutX="124.0" layoutY="173.0" text="PIN" />
+                  <Label fx:id="pinPhLabel" layoutX="205.0" layoutY="173.0" text="******" />
+                  <Button fx:id="viewPinBtn" layoutX="325.0" layoutY="167.0" mnemonicParsing="false" style="-fx-background-color: #0866FF;" text="Xem" textFill="WHITE">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                  </Button>
                     </children>
                 </AnchorPane>
             </content>

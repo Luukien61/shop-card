@@ -10,10 +10,7 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.time.LocalDate;
-import java.util.Base64;
 
 import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 
@@ -89,9 +86,9 @@ public class InitiateCardController {
 
         ApplicationHelper
                 .showPinDialog("Khởi tạo PIN", "Nhập PIN mới cho tài khoản").ifPresent(userPin -> {
-                    PinDialog.show(
-                            "Quản trị viên",
-                            null,
+                    CredentialDialog.show(
+                            VerifySecretController.SecretType.PIN,
+                            "Xác thực PIN Admin",
                             5,
                             DatabaseHelper::verifySysUserPin,
                             (adminPin) -> initiateCard(username, address, phone, birthDate, genderSelected, userPin, adminPin),

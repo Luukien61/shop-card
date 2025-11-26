@@ -7,27 +7,25 @@ import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.service.ProductService;
 import com.luukien.javacard.service.UserService;
-import com.luukien.javacard.sql.SqlQueries;
 import com.luukien.javacard.state.AppState;
-import com.luukien.javacard.utils.ApplicationHelper;
-import com.luukien.javacard.utils.DatabaseHelper;
 import com.luukien.javacard.utils.DateConverter;
+import com.luukien.javacard.utils.CredentialDialog;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class HomeManagementController {
 
+    @FXML
+    private Label pinLabel;
+    @FXML
+    private Label pinPhLabel;
+    @FXML
+    private Button viewPinBtn;
     @FXML
     private Tab orderPaneTab;
     @FXML
@@ -126,6 +124,7 @@ public class HomeManagementController {
         initializeProductTab();
         initializeOrderTab();
         initializeUserTab();
+        initializeAccountTab();
     }
 
     private void initializeProductTab() {
@@ -208,7 +207,7 @@ public class HomeManagementController {
                     label.setOnMouseExited(e -> label.setStyle("-fx-underline: true; -fx-text-fill: #0066cc; -fx-cursor: hand;"));
 
                     label.setOnMouseClicked(e -> {
-                        User user =  getTableRow().getItem();
+                        User user = getTableRow().getItem();
                         if (user != null && e.getClickCount() == 1) {
                             AppState.getInstance().setCurrentClientPhone(user.getPhone());
                             SceneManager.switchTo(Scenes.USER_INFO_SCENE);
@@ -257,6 +256,26 @@ public class HomeManagementController {
                 productData.setAll(items);
             }
         }
+    }
+
+    private void initializeAccountTab() {
+        boolean isAdmin = AppState.getInstance().isAdminMode();
+        pinLabel.setVisible(isAdmin);
+        pinPhLabel.setVisible(isAdmin);
+        viewPinBtn.setDisable(!isAdmin);
+        viewPinBtn.setVisible(isAdmin);
+        viewPinBtn.setOnAction(e -> {
+            CredentialDialog.show(
+                    VerifySecretController.SecretType.PASSWORD,
+                    "Nhập mật khẩu để tiếp tục",
+                    5,
+                    (s) -> false,
+                    (s) -> {
+                    },
+                    () -> {
+                    }
+            );
+        });
     }
 
 

@@ -33,7 +33,7 @@ public class Argon2KeyDerivation {
     }
 
 
-    public static SecretKey recoverAesKey(String wrappedData, String enteredPassword) throws Exception {
+    private static SecretKey recoverAesKey(String wrappedData, String enteredPassword) throws Exception {
         byte[] blob = Base64.getDecoder().decode(wrappedData);
 
         byte[] salt = Arrays.copyOfRange(blob, 0, SALT_LENGTH);
@@ -65,7 +65,7 @@ public class Argon2KeyDerivation {
      * Dẫn xuất KEK (Key Encryption Key) từ password bằng Argon2
      * Cùng password + salt sẽ luôn cho cùng một KEK
      */
-    public static byte[] deriveKEK(String password, byte[] salt) {
+    private static byte[] deriveKEK(String password, byte[] salt) {
         Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
                 .withVersion(Argon2Parameters.ARGON2_VERSION_13)
                 .withIterations(ITERATIONS)
@@ -96,7 +96,7 @@ public class Argon2KeyDerivation {
      * Mã hóa khóa AES bằng KEK (Key Wrapping)
      * Trả về: IV + Encrypted AES Key
      */
-    public static byte[] wrapAESKey(SecretKey aesKey, byte[] kek) throws Exception {
+    private static byte[] wrapAESKey(SecretKey aesKey, byte[] kek) throws Exception {
         SecretKeySpec kekSpec = new SecretKeySpec(kek, "AES");
 
         byte[] iv = new byte[12];
@@ -119,7 +119,7 @@ public class Argon2KeyDerivation {
     /**
      * Giải mã khóa AES từ wrapped key bằng KEK
      */
-    public static SecretKey unwrapAESKey(byte[] wrappedKey, byte[] kek) throws Exception {
+    private static SecretKey unwrapAESKey(byte[] wrappedKey, byte[] kek) throws Exception {
         // Tách IV và encrypted key
         byte[] iv = new byte[12];
         byte[] encryptedKey = new byte[wrappedKey.length - 12];
@@ -148,6 +148,11 @@ public class Argon2KeyDerivation {
         } catch (Exception e) {
             throw new RuntimeException("Error generating salt", e);
         }
+    }
+
+    public static String encryptData(String plaintext, String wrappedKey, String password) throws Exception {
+        SecretKey key = recoverAesKey(wrappedKey, password);
+        return encryptData(plaintext, key);
     }
 
     /**

@@ -14,6 +14,7 @@ import java.io.IOException;
 public class ShopCardApplication extends Application {
     @Override
     public void start(Stage stage) {
+        //DatabaseHelper.seedUsers();
         SceneManager.init(stage);
         SceneManager.switchTo(Scenes.LOGIN_SCENE);
     }
