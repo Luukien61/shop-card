@@ -10,19 +10,21 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
 import java.io.IOException;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class PinDialog {
 
     public static void show(String title, String header, int maxAttempts,
                             Predicate<String> verifier,
-                            Runnable onSuccess) {
+                            Consumer<String> onSuccess) {
         show(title, header, maxAttempts, verifier, onSuccess, null);
     }
 
     public static void show(String title, String header, int maxAttempts,
                             Predicate<String> verifier,
-                            Runnable onSuccess, Runnable onFailed) {
+                            Consumer<String> onSuccess, Runnable onFailed) {
         try {
             FXMLLoader loader = new FXMLLoader(PinDialog.class.getResource("/com/luukien/javacard/" + Scenes.VERIFY_PIN_SCENE));
             Parent root = loader.load();

@@ -8,6 +8,8 @@ import javafx.scene.control.PasswordField;
 import javafx.stage.Stage;
 import lombok.Setter;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class VerifyPinController {
@@ -30,7 +32,7 @@ public class VerifyPinController {
     private Predicate<String> pinVerifier;
     private int maxAttempts;
     private int attemptsLeft;
-    private Runnable onSuccess;
+    private Consumer<String> onSuccess;
     private Runnable onFailed;
 
     @FXML
@@ -46,7 +48,7 @@ public class VerifyPinController {
     }
 
     public void setup(String title, String header, int maxAttempts,
-                      Predicate<String> verifier, Runnable onSuccess, Runnable onFailed) {
+                      Predicate<String> verifier, Consumer<String> onSuccess, Runnable onFailed) {
         this.maxAttempts = maxAttempts > 0 ? maxAttempts : 5;
         this.attemptsLeft = this.maxAttempts;
         this.pinVerifier = verifier;
@@ -72,7 +74,7 @@ public class VerifyPinController {
         }
 
         if (pinVerifier.test(pin)) {
-            if (onSuccess != null) onSuccess.run();
+            if (onSuccess != null) onSuccess.accept(pin);
             stage.close();
         } else {
             attemptsLeft--;
@@ -108,8 +110,10 @@ public class VerifyPinController {
         pinTextField.setDisable(true);
 
         new Thread(() -> {
-            try { Thread.sleep(3000); }
-            catch (InterruptedException ignored) {}
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException ignored) {
+            }
             Platform.runLater(stage::close);
         }).start();
     }

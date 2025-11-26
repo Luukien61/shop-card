@@ -90,49 +90,116 @@ public class InitiateCardController {
                             null,
                             5,
                             DatabaseHelper::verifySysUserPin,
-                            () -> {},
-                            () -> showAlert("Thẻ bị khóa tạm thời!", true)    // khi sai quá 5 lần
+                            (adminPin) -> initiateCard(username, address, phone, birthDate, genderSelected, userPin, adminPin),
+                            () -> showAlert("Thẻ bị khóa tạm thời!", true)
                     );
                 });
 
     }
+
+    private void initiateCard(
+            String username,
+            String address,
+            String phone,
+            LocalDate birthDate,
+            String gender,
+            String userPin,
+            String adminPin
+    ) {
+        if (!CardHelper.clearCardData()) {
+            ApplicationHelper.showAlert("Không thể xóa dữ liệu cũ trên thẻ!\nVui lòng rút thẻ ra và thử lại.", true);
+            return;
+        }
+
+        ApplicationHelper.showProgress("Đang khởi tạo thẻ, vui lòng không rút thẻ...");
+
+        final int MAX_ATTEMPTS = 3;
+
+        boolean cardInitialized = false;
+        String finalCardId = null;
+        String finalPublicKey = null;
+        String uploadImageUrl = null;
+
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            ApplicationHelper.updateProgress("Đang ghi thẻ (lần " + attempt + "/" + MAX_ATTEMPTS + ")...");
+
+            String[] genResult = CardHelper.initiateKeyAndCardId();
+            if (genResult == null || genResult.length != 2) {
+                CardHelper.clearCardData();
+                continue;
+            }
+
+            finalPublicKey = genResult[0];
+            finalCardId = genResult[1];
+
+
+            Boolean writeSuccess = CardHelper.initiateCard(
+                    username, address, phone,
+                    userPin, adminPin,
+                    selectedImageFile,
+                    finalCardId
+            );
+
+            if (writeSuccess) {
+                cardInitialized = true;
+                break;
+            } else {
+                ApplicationHelper.showToast("Lần " + attempt + " thất bại, đang thử lại...");
+                CardHelper.clearCardData();
+                ApplicationHelper.delay(1500);
+            }
+        }
+
+
+        if (!cardInitialized) {
+            ApplicationHelper.hideProgress();
+            ApplicationHelper.showAlert(
+                    "Khởi tạo thẻ thất bại sau " + MAX_ATTEMPTS + " lần thử!\n" +
+                            "Vui lòng kiểm tra:\n" +
+                            "• Thẻ có bị lỗi không?\n" +
+                            "• Đầu đọc có kết nối ổn định không?\n" +
+                            "• Thử rút ra cắm lại thẻ.",
+                    true
+            );
+            return;
+        }
+        if (selectedImageFile != null) {
+            uploadImageUrl = CloudinaryHelper.uploadImage(selectedImageFile);
+            if (uploadImageUrl == null) {
+                ApplicationHelper.showAlert("Upload ảnh thất bại!", true);
+                CardHelper.clearCardData();
+                ApplicationHelper.hideProgress();
+                return;
+            }
+        }
+        boolean dbSuccess = DatabaseHelper.insertUser(
+                username,
+                address,
+                uploadImageUrl,
+                birthDate,
+                gender,
+                phone,
+                finalCardId,
+                finalPublicKey
+        );
+
+        ApplicationHelper.hideProgress();
+
+        if (dbSuccess) {
+            ApplicationHelper.showAlert(
+                    "Khởi tạo thẻ thành công!\n\nCard ID: " + finalCardId,
+                    false
+            );
+            SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+        } else {
+            ApplicationHelper.showAlert(
+                    "Ghi thẻ thành công nhưng lưu CSDL thất bại!\n" +
+                            "Thẻ vẫn hoạt động bình thường.\n" +
+                            "Card ID: " + finalCardId + "\n\n" +
+                            "Vui lòng báo admin để xử lý dữ liệu CSDL.",
+                    true
+            );
+            SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+        }
+    }
 }
-/*
-String[] result = CardHelper.initiateCard(username, address, phone, userPin, adminPin, selectedImageFile);
-
-                        if (result == null) {
-                            ApplicationHelper.showAlert("Không thể khởi tạo thẻ! Vui lòng thử lại.", true);
-                            return;
-                        }
-
-                        String publicKey = result[0];
-                        String cardId = result[1];
-
-                        String imageBase64;
-                        try {
-                            byte[] imageBytes = Files.readAllBytes(selectedImageFile.toPath());
-                            imageBase64 = Base64.getEncoder().encodeToString(imageBytes);
-                        } catch (IOException e) {
-                            ApplicationHelper.showAlert("Không thể đọc file ảnh!", true);
-                            return;
-                        }
-                        String uploadImage = CloudinaryHelper.uploadImage(selectedImageFile);
-
-                        boolean success = DatabaseHelper.insertUser(
-                                username,
-                                address,
-                                uploadImage,
-                                birthDate,
-                                genderSelected,
-                                phone,
-                                cardId,
-                                publicKey
-                        );
-
-                        if (success) {
-                            ApplicationHelper.showAlert("Khởi tạo thẻ thành công!\nCard ID: " + cardId, false);
-                            SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
-                        } else {
-                            ApplicationHelper.showAlert("Thêm người dùng vào CSDL thất bại!", true);
-                        }
- */
