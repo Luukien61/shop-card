@@ -14,6 +14,7 @@ module com.luukien.javacard {
     requires java.desktop;
     requires cloudinary.core;
     requires org.bouncycastle.provider;
+    requires jakarta.mail;
 
     opens com.luukien.javacard to javafx.fxml;
     exports com.luukien.javacard;
