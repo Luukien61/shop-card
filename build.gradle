@@ -54,6 +54,8 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.42")
     // https://mvnrepository.com/artifact/com.cloudinary/cloudinary-http45
     implementation("com.cloudinary:cloudinary-http45:1.39.0")
+    // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
+    implementation("org.bouncycastle:bcprov-jdk18on:1.82")
 }
 
 test {

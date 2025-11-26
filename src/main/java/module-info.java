@@ -13,6 +13,7 @@ module com.luukien.javacard {
     requires java.smartcardio;
     requires java.desktop;
     requires cloudinary.core;
+    requires org.bouncycastle.provider;
 
     opens com.luukien.javacard to javafx.fxml;
     exports com.luukien.javacard;
