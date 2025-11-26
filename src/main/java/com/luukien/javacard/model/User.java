@@ -16,7 +16,6 @@ public class User {
 
     private Long id;
     private String userName;
-    private String pin;
     private String address;
     private String image;
     private LocalDate dateOfBirth;
@@ -25,6 +24,7 @@ public class User {
     private String publicKey;
     private BigDecimal balance;
     private String memberTier;
+    private String gender;
     private BigDecimal quarter_spending;
 
     public String getFormattedBalance() {
@@ -32,5 +32,12 @@ public class User {
             return "0 ₫";
         }
         return String.format("%,.0f ₫", balance);
+    }
+
+    public User(String userName, String address, String phone, String memberTier) {
+        this.userName = userName;
+        this.address = address;
+        this.phone = phone;
+        this.memberTier = memberTier;
     }
 }

@@ -11,6 +11,7 @@ public class SqlQueries {
     private final String GET_PRODUCT_BY_ID = "select * from products p where p.id = ?;";
     private final String UPDATE_PRODUCT_BY_ID = "update products set  name = ?, code = ?, price = ?, remain = ? where id = ?;";
     private final String FILTER_PRODUCT_BY_NAME_OR_CODE = "SELECT * FROM products WHERE search_vector @@ plainto_tsquery('simple', ?);";
+    private final String GET_PREVIEW_USERS = "select user_name, address, phone, member_tier from users; ";
     private SqlQueries() {
     }
 

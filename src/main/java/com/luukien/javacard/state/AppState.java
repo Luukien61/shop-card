@@ -22,6 +22,9 @@ public class AppState {
 
     private String currentUserRole;
     private String currentUserEmail;
+    @Setter
+    @Getter
+    private String currentClientPhone;
 
     @Setter
     @Getter
@@ -59,5 +62,9 @@ public class AppState {
         currentUserEmail = null;
         currentUserRole = null;
         clearOrders();
+    }
+
+    public boolean isAdminMode() {
+        return this.currentUserRole.equals("ADMIN");
     }
 }

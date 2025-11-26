@@ -20,6 +20,8 @@ import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 public class InitiateCardController {
 
     @FXML
+    private Button backButton;
+    @FXML
     private TextField usernameField;
     @FXML
     private DatePicker dateField;
@@ -45,8 +47,10 @@ public class InitiateCardController {
 
     @FXML
     public void initialize() {
+        dateField.setConverter(DateConverter.getLocalDateConverter());
         chooseImageBtn.setOnAction(e -> onChooseImage());
         finishBtn.setOnAction(e -> onFinish());
+        backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
     }
 
 
