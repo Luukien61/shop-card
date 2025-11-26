@@ -56,6 +56,8 @@ dependencies {
     implementation("com.cloudinary:cloudinary-http45:1.39.0")
     // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
     implementation("org.bouncycastle:bcprov-jdk18on:1.82")
+    // https://mvnrepository.com/artifact/com.sun.mail/jakarta.mail
+    implementation("com.sun.mail:jakarta.mail:2.0.2")
 }
 
 test {

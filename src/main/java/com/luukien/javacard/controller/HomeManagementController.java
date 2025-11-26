@@ -11,15 +11,18 @@ import com.luukien.javacard.service.UserService;
 import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
 import com.luukien.javacard.utils.Argon2KeyDerivation;
-import com.luukien.javacard.utils.DateConverter;
 import com.luukien.javacard.utils.CredentialDialog;
+import com.luukien.javacard.utils.DateConverter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.util.List;
+
+import static com.luukien.javacard.utils.EmailHelper.sendEmail;
 
 public class HomeManagementController {
 
@@ -274,6 +277,14 @@ public class HomeManagementController {
                     5,
                     (password) -> AccountService.verifyPassword(password, AppState.getInstance().getCurrentUserEmail()),
                     (password) -> {
+                        Task<Void> emailTask = new Task<>() {
+                            @Override
+                            protected Void call() {
+                                sendEmail("kienluu61@gmail.com");
+                                return null;
+                            }
+                        };
+                        new Thread(emailTask).start();
                         String[] data = AccountService.getEncryptedKeyAndPin(AppState.getInstance().getCurrentUserEmail());
                         if (data == null) {
                             ApplicationHelper.showAlert("Không tìm thấy người dùng", true);
