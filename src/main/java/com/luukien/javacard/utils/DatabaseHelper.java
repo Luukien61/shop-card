@@ -1,10 +1,8 @@
 package com.luukien.javacard.utils;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
-import com.luukien.javacard.model.Product;
 import com.luukien.javacard.state.AppState;
 
-import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
 
@@ -143,6 +141,26 @@ public class DatabaseHelper {
             System.err.println("Lỗi kiểm tra PIN hệ thống: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public static int deleteIncompleteUser(String phone, String cardId) {
+        if (cardId == null || cardId.isBlank() || phone == null || phone.isBlank()) {
+            return 0;
+        }
+        String sql = "delete from users where card_id = ? and phone = ?";
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            assert conn != null;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                ps.setString(1, cardId);
+                ps.setString(2, phone);
+                return ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi kiểm tra PIN hệ thống: " + e.getMessage());
+            e.printStackTrace();
+            return 0;
         }
     }
 }

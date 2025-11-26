@@ -1,8 +1,5 @@
 package com.luukien.javacard.utils;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
-import com.luukien.javacard.state.AppState;
-
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
@@ -16,10 +13,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
@@ -34,6 +27,7 @@ public class CardHelper {
     public static final byte INS_WRITE_USER_PIN = (byte) 0x05;
     public static final byte INS_WRITE_ADMIN_PIN = (byte) 0x06;
     public static final byte INS_WRITE_AVATAR = (byte) 0x07;
+    public static final byte INS_CLEAR_DATA = (byte) 0x10;
 
     public static final String SUCCESS_RESPONSE = "9000";
 
@@ -65,7 +59,8 @@ public class CardHelper {
         return new CommandAPDU(0x00, 0xA4, 0x04, 0x00, aid);
     }
 
-    public static String[] initiateCard(String username, String address, String phone, String userPIN, String adminPIN, File avatar) {
+
+    public static Boolean initiateCard(String username, String address, String phone, String userPIN, String adminPIN, File avatar, String cardId) {
         try {
             CardChannel channel = connect();
             CommandAPDU select = selectAID(AID);
@@ -73,16 +68,10 @@ public class CardHelper {
             if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
                 throw new RuntimeException("unable to select the applet");
             }
-            String publicKey = initiateKey(channel);
-            if (publicKey == null) {
-                throw new RuntimeException("Unable to initiate the RSA key");
-            }
 
             byte[] usernameData = username.getBytes(StandardCharsets.UTF_8);
             byte[] addressData = address.getBytes(StandardCharsets.UTF_8);
-//            byte[] dateOfBirthData = user.getDateOfBirth().toString().getBytes(StandardCharsets.UTF_8);
             byte[] phoneData = phone.getBytes(StandardCharsets.UTF_8);
-            String cardId = generate16Digits();
             byte[] cardIdData = cardId.getBytes(StandardCharsets.UTF_8);
             byte[] userPINData = userPIN.getBytes(StandardCharsets.UTF_8);
             byte[] adminPINData = adminPIN.getBytes(StandardCharsets.UTF_8);
@@ -99,10 +88,45 @@ public class CardHelper {
             sendData(channel, INS_WRITE_USER_PIN, userPINData);
             sendData(channel, INS_WRITE_ADMIN_PIN, adminPINData);
             sendData(channel, INS_WRITE_AVATAR, avatarData);
+            return true;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
+    }
+
+    public static String[] initiateKeyAndCardId() {
+        try {
+            String cardId = generate16Digits();
+            CardChannel channel = connect();
+            CommandAPDU select = selectAID(AID);
+            ResponseAPDU resp = channel.transmit(select);
+            if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
+                throw new RuntimeException("unable to select the applet");
+            }
+            String publicKey = initiateKey(channel);
             return new String[]{publicKey, cardId};
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
+        }
+    }
+
+    public static boolean clearCardData() {
+        try {
+            CardChannel channel = connect();
+            CommandAPDU select = selectAID(AID);
+            ResponseAPDU resp = channel.transmit(select);
+            if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
+                throw new RuntimeException("unable to select the applet");
+            }
+
+            CommandAPDU clearData = new CommandAPDU(0x00, INS_CLEAR_DATA, 0x00, 0x00, 0);
+            ResponseAPDU r = channel.transmit(clearData);
+
+            return r.getSW() == 0x9000;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -177,5 +201,4 @@ public class CardHelper {
         g.dispose();
         return resizedImage;
     }
-
 }
