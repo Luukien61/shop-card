@@ -28,10 +28,13 @@ public class CardHelper {
     public static final byte INS_WRITE_ADMIN_PIN = (byte) 0x06;
     public static final byte INS_WRITE_AVATAR = (byte) 0x07;
     public static final byte INS_CLEAR_DATA = (byte) 0x10;
+    public static final byte INS_UPDATE_USER_PIN = (byte) 0x20;
 
     public static final String SUCCESS_RESPONSE = "9000";
 
     private static final SecureRandom random = new SecureRandom();
+    public static final int SUCCESS_SW = 0x9000;
+
 
     public static CardChannel connect() throws CardException {
         TerminalFactory factory = TerminalFactory.getDefault();
@@ -126,6 +129,33 @@ public class CardHelper {
 
             return r.getSW() == 0x9000;
         } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean changeUserPin(String currentPin, String newPin) {
+        if (currentPin.length() != 6 || newPin.length() != 6 || !currentPin.matches("\\d{6}") || !newPin.matches("\\d{6}")) {
+            return false;
+        }
+        try {
+            CardChannel channel = connect();
+            CommandAPDU select = selectAID(AID);
+            ResponseAPDU resp = channel.transmit(select);
+            if (resp.getSW() != SUCCESS_SW) {
+                throw new RuntimeException("unable to select the applet");
+            }
+            CommandAPDU cmd = new CommandAPDU(
+                    0x00,
+                    INS_UPDATE_USER_PIN,
+                    0x00, 0x00,
+                    (currentPin + newPin).getBytes()
+            );
+
+            ResponseAPDU result = channel.transmit(cmd);
+            return result.getSW() == SUCCESS_SW;
+
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
