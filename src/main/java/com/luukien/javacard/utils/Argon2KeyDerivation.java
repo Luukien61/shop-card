@@ -176,6 +176,11 @@ public class Argon2KeyDerivation {
         return Base64.getEncoder().encodeToString(combined);
     }
 
+    public static String decryptData(String encryptedData, String encryptedKey, String password) throws Exception {
+        SecretKey key = recoverAesKey(encryptedKey, password);
+        return decryptData(encryptedData, key);
+    }
+
     /**
      * Giải mã dữ liệu bằng AES key
      */

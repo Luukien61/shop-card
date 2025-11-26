@@ -1,13 +1,10 @@
 package com.luukien.javacard.service;
 
-import com.luukien.javacard.model.Product;
 import com.luukien.javacard.model.User;
 import com.luukien.javacard.sql.SqlQueries;
 import com.luukien.javacard.utils.ApplicationHelper;
 import com.luukien.javacard.utils.DatabaseHelper;
 import lombok.Getter;
-
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

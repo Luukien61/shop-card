@@ -5,9 +5,12 @@ import com.luukien.javacard.model.User;
 import com.luukien.javacard.model.UserRole;
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
+import com.luukien.javacard.service.AccountService;
 import com.luukien.javacard.service.ProductService;
 import com.luukien.javacard.service.UserService;
 import com.luukien.javacard.state.AppState;
+import com.luukien.javacard.utils.ApplicationHelper;
+import com.luukien.javacard.utils.Argon2KeyDerivation;
 import com.luukien.javacard.utils.DateConverter;
 import com.luukien.javacard.utils.CredentialDialog;
 import javafx.collections.FXCollections;
@@ -269,8 +272,24 @@ public class HomeManagementController {
                     VerifySecretController.SecretType.PASSWORD,
                     "Nhập mật khẩu để tiếp tục",
                     5,
-                    (s) -> false,
-                    (s) -> {
+                    (password) -> AccountService.verifyPassword(password, AppState.getInstance().getCurrentUserEmail()),
+                    (password) -> {
+                        String[] data = AccountService.getEncryptedKeyAndPin(AppState.getInstance().getCurrentUserEmail());
+                        if (data == null) {
+                            ApplicationHelper.showAlert("Không tìm thấy người dùng", true);
+                            return;
+                        }
+                        String encryptedPin = data[0];
+                        String encryptedMasterKey = data[1];
+                        try {
+                            String pin = Argon2KeyDerivation.decryptData(encryptedPin, encryptedMasterKey, password);
+                            ApplicationHelper.showAlert(
+                                    "Ghi nhớ kỹ mã PIN của bạn!\n\nPIN: " + pin,
+                                    false
+                            );
+                        } catch (Exception ex) {
+                            ApplicationHelper.showAlert("Không thể giải mã", true);
+                        }
                     },
                     () -> {
                     }
