@@ -1,6 +1,6 @@
 package com.luukien.javacard.utils;
 
-import com.luukien.javacard.controller.VerifyPinController;
+import com.luukien.javacard.controller.VerifySecretController;
 import com.luukien.javacard.screen.Scenes;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -11,24 +11,18 @@ import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class PinDialog {
+public class CredentialDialog {
 
-    public static void show(String title, String header, int maxAttempts,
-                            Predicate<String> verifier,
-                            Consumer<String> onSuccess) {
-        show(title, header, maxAttempts, verifier, onSuccess, null);
-    }
 
-    public static void show(String title, String header, int maxAttempts,
+    public static void show(VerifySecretController.SecretType type, String header, int maxAttempts,
                             Predicate<String> verifier,
                             Consumer<String> onSuccess, Runnable onFailed) {
         try {
-            FXMLLoader loader = new FXMLLoader(PinDialog.class.getResource("/com/luukien/javacard/" + Scenes.VERIFY_PIN_SCENE));
+            FXMLLoader loader = new FXMLLoader(CredentialDialog.class.getResource("/com/luukien/javacard/" + Scenes.VERIFY_PIN_SCENE));
             Parent root = loader.load();
-            VerifyPinController controller = loader.getController();
+            VerifySecretController controller = loader.getController();
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -37,7 +31,7 @@ public class PinDialog {
             stage.setResizable(false);
 
             controller.setStage(stage);
-            controller.setup(title, header, maxAttempts, verifier, onSuccess, onFailed);
+            controller.setup(type, header, maxAttempts, verifier, onSuccess, onFailed);
 
             stage.showAndWait();
 
