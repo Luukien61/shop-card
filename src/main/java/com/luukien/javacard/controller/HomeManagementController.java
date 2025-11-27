@@ -1,5 +1,6 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.dialog.UpdateCredentialDialog;
 import com.luukien.javacard.model.Product;
 import com.luukien.javacard.model.SecretType;
 import com.luukien.javacard.model.User;
@@ -272,13 +273,13 @@ public class HomeManagementController {
 
     private void initializeAccountTab() {
         boolean isAdmin = AppState.getInstance().isAdminMode();
-        emailLabel.setText(AppState.getInstance().getCurrentUserEmail());
+        String currentUserEmail = AppState.getInstance().getCurrentUserEmail();
+        emailLabel.setText(currentUserEmail);
         pinLabel.setVisible(isAdmin);
         pinPhLabel.setVisible(isAdmin);
         viewPinBtn.setDisable(!isAdmin);
         viewPinBtn.setVisible(isAdmin);
         viewPinBtn.setOnAction(e -> {
-            String currentUserEmail = AppState.getInstance().getCurrentUserEmail();
             VerifyCredentialDialog.show(
                     SecretType.PASSWORD,
                     "Nhập mật khẩu để tiếp tục",
@@ -324,8 +325,13 @@ public class HomeManagementController {
                     null
             );
         });
-
+        updatePasswordBtn.setOnAction(e -> {
+            UpdateCredentialDialog.show(
+                    SecretType.PASSWORD,
+                    null,
+                    null,
+                    (oldPass, newPass) -> AccountService.updatePassword(oldPass,newPass,currentUserEmail)
+            );
+        });
     }
-
-
 }

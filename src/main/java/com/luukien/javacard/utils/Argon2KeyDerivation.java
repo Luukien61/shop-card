@@ -44,8 +44,8 @@ public class Argon2KeyDerivation {
         return unwrapAESKey(wrapped, kek);
     }
 
-    public static String updateWrappedKey(String wrappedData, String oldPass, String newPass) throws Exception {
-        SecretKey aesKey = recoverAesKey(wrappedData, oldPass);
+    public static String updateWrappedKey(String wrappedKey, String oldPass, String newPass) throws Exception {
+        SecretKey aesKey = recoverAesKey(wrappedKey, oldPass);
         byte[] salt = new byte[SALT_LENGTH];
         new SecureRandom().nextBytes(salt);
         byte[] kek = deriveKEK(newPass, salt);
