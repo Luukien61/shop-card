@@ -119,7 +119,7 @@ public class DatabaseHelper {
             return false;
         }
 
-        String sql = "SELECT pin FROM system_users WHERE email = ?";
+        String sql = "SELECT pin_hash FROM system_users WHERE email = ?";
 
         try (Connection conn = DatabaseHelper.getConnection()) {
             assert conn != null;
@@ -128,7 +128,7 @@ public class DatabaseHelper {
                 ps.setString(1, currentUserEmail);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        String hashedPin = rs.getString("pin");
+                        String hashedPin = rs.getString("pin_hash");
 
                         if (hashedPin == null || hashedPin.isEmpty()) {
                             return false;

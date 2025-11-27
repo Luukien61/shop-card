@@ -29,6 +29,7 @@ public class CardHelper {
     public static final byte INS_WRITE_AVATAR = (byte) 0x07;
     public static final byte INS_CLEAR_DATA = (byte) 0x10;
     public static final byte INS_UPDATE_USER_PIN = (byte) 0x20;
+    public static final byte INS_SET_PINS = (byte) 0x08;
 
     public static final String SUCCESS_RESPONSE = "9000";
 
@@ -78,18 +79,23 @@ public class CardHelper {
             byte[] cardIdData = cardId.getBytes(StandardCharsets.UTF_8);
             byte[] userPINData = userPIN.getBytes(StandardCharsets.UTF_8);
             byte[] adminPINData = adminPIN.getBytes(StandardCharsets.UTF_8);
+            byte[] setPINData = new byte[userPINData.length + adminPINData.length];
+            System.arraycopy(userPINData, 0, setPINData, 0, userPINData.length);
+            System.arraycopy(adminPINData, 0, setPINData, userPINData.length, adminPINData.length);
 
             BufferedImage original = ImageIO.read(avatar);
             BufferedImage resized = resize(original, 200, 200);
             byte[] avatarData = compressImage(resized, 0.6f);
             System.out.println("Avatar length: " + avatarData.length + " bytes");
 
+            sendData(channel, INS_SET_PINS, setPINData);
+
             sendData(channel, INS_WRITE_USERNAME, usernameData);
             sendData(channel, INS_WRITE_ADDRESS, addressData);
             sendData(channel, INS_WRITE_PHONE, phoneData);
             sendData(channel, INS_WRITE_CARD_ID, cardIdData);
-            sendData(channel, INS_WRITE_USER_PIN, userPINData);
-            sendData(channel, INS_WRITE_ADMIN_PIN, adminPINData);
+//            sendData(channel, INS_WRITE_USER_PIN, userPINData);
+//            sendData(channel, INS_WRITE_ADMIN_PIN, adminPINData);
             sendData(channel, INS_WRITE_AVATAR, avatarData);
             return true;
         } catch (Exception e) {
