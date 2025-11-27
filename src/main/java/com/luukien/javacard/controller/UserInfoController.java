@@ -1,10 +1,12 @@
 package com.luukien.javacard.controller;
 
 import com.luukien.javacard.dialog.UpdateCredentialDialog;
+import com.luukien.javacard.dialog.VerifyCredentialDialog;
 import com.luukien.javacard.model.SecretType;
 import com.luukien.javacard.model.User;
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
+import com.luukien.javacard.service.AccountService;
 import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
 import com.luukien.javacard.utils.CardHelper;
@@ -188,6 +190,7 @@ public class UserInfoController {
 
     private void updateButtonStates() {
         boolean isAdmin = AppState.getInstance().isAdminMode();
+        String currentEmail = AppState.getInstance().getCurrentUserEmail();
         unlockBtn.setVisible(isAdmin);
         unlockBtn.setManaged(isAdmin);
         unlockBtn.setDisable(!isAdmin);
@@ -195,12 +198,20 @@ public class UserInfoController {
         changePinBtn.setManaged(isAdmin);
         changePinBtn.setDisable(!isAdmin);
         changePinBtn.setOnAction(e -> {
-            UpdateCredentialDialog.show(
-                    SecretType.PIN,
+            VerifyCredentialDialog.show(
+                    SecretType.PASSWORD,
                     null,
-                    null,
-                    CardHelper::changeUserPin
+                    5,
+                    (password) -> AccountService.verifyPassword(password, currentEmail),
+                    (ignore) -> UpdateCredentialDialog.show(
+                            SecretType.PIN,
+                            null,
+                            null,
+                            CardHelper::changeUserPin
+                    ),
+                    null
             );
+
         });
 
         backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
