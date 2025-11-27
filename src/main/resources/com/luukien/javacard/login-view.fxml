@@ -44,7 +44,7 @@
                                 <Insets left="16.0" />
                             </padding>
                         </TextField>
-                        <PasswordField fx:id="passwordField" layoutX="56.0" layoutY="235.0" prefHeight="29.0" prefWidth="214.0" promptText="Password" style="-fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #0866FF;" text="admin123">
+                        <PasswordField fx:id="passwordField" layoutX="56.0" layoutY="235.0" prefHeight="29.0" prefWidth="214.0" promptText="Password" style="-fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #0866FF;" text="123456">
                             <font>
                                 <Font size="14.0" />
                             </font>

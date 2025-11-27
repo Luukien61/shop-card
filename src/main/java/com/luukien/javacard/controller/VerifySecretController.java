@@ -37,7 +37,7 @@ public class VerifySecretController {
     private int attemptsLeft;
     private Consumer<String> onSuccess;
     private Runnable onFailed;
-    private SecretType secretType = SecretType.PIN; // Mặc định
+    private SecretType secretType = SecretType.PIN;
 
 
 
