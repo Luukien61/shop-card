@@ -1,5 +1,7 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.dialog.VerifyCredentialDialog;
+import com.luukien.javacard.model.SecretType;
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.utils.*;
@@ -86,8 +88,8 @@ public class InitiateCardController {
 
         ApplicationHelper
                 .showPinDialog("Khởi tạo PIN", "Nhập PIN mới cho tài khoản").ifPresent(userPin -> {
-                    CredentialDialog.show(
-                            VerifySecretController.SecretType.PIN,
+                    VerifyCredentialDialog.show(
+                            SecretType.PIN,
                             "Xác thực PIN Admin",
                             5,
                             DatabaseHelper::verifySysUserPin,

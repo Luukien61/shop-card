@@ -1,6 +1,7 @@
 package com.luukien.javacard.controller;
 
 import com.luukien.javacard.model.Product;
+import com.luukien.javacard.model.SecretType;
 import com.luukien.javacard.model.User;
 import com.luukien.javacard.model.UserRole;
 import com.luukien.javacard.screen.SceneManager;
@@ -11,7 +12,7 @@ import com.luukien.javacard.service.UserService;
 import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
 import com.luukien.javacard.utils.Argon2KeyDerivation;
-import com.luukien.javacard.utils.CredentialDialog;
+import com.luukien.javacard.dialog.VerifyCredentialDialog;
 import com.luukien.javacard.utils.DateConverter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -278,8 +279,8 @@ public class HomeManagementController {
         viewPinBtn.setVisible(isAdmin);
         viewPinBtn.setOnAction(e -> {
             String currentUserEmail = AppState.getInstance().getCurrentUserEmail();
-            CredentialDialog.show(
-                    VerifySecretController.SecretType.PASSWORD,
+            VerifyCredentialDialog.show(
+                    SecretType.PASSWORD,
                     "Nhập mật khẩu để tiếp tục",
                     5,
                     (password) -> AccountService.verifyPassword(password, currentUserEmail),
@@ -294,8 +295,8 @@ public class HomeManagementController {
                         };
                         new Thread(emailTask).start();
 
-                        CredentialDialog.show(
-                                VerifySecretController.SecretType.TWO_FACTOR,
+                        VerifyCredentialDialog.show(
+                                SecretType.TWO_FACTOR,
                                 "Nhập OTP đã được gửi về email của bạn",
                                 3,
                                 (code) -> code.equals(otp),

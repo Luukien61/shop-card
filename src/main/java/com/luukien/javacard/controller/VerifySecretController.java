@@ -1,5 +1,6 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.model.SecretType;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -38,27 +39,7 @@ public class VerifySecretController {
     private Runnable onFailed;
     private SecretType secretType = SecretType.PIN; // Mặc định
 
-    public enum SecretType {
-        PIN("PIN", "6 chữ số", "\\d{6}", "PIN phải đúng 6 chữ số!", 6),
-        PASSWORD("Mật khẩu", "Nhập mật khẩu", null, "Mật khẩu không đúng!", -1),
-        MASTER_PASSWORD("Mật khẩu chính", "Nhập mật khẩu chính của ví", null, "Mật khẩu chính sai!", -1),
-        PASSPHRASE("Cụm từ khôi phục", "Nhập cụm từ khôi phục (12-24 từ)", null, "Cụm từ khôi phục sai!", -1),
-        TWO_FACTOR("Mã xác thực 2FA", "Nhập mã 6-8 số từ ứng dụng", "\\d{6,8}", "Mã 2FA không hợp lệ!", 6);
 
-        final String label;
-        final String prompt;
-        final String regex;
-        final String invalidMsg;
-        final int fixedLength;
-
-        SecretType(String label, String prompt, String regex, String invalidMsg, int fixedLength) {
-            this.label = label;
-            this.prompt = prompt;
-            this.regex = regex;
-            this.invalidMsg = invalidMsg;
-            this.fixedLength = fixedLength;
-        }
-    }
 
     @FXML
     public void initialize() {
