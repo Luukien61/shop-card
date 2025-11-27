@@ -67,7 +67,6 @@ public class VerifySecretController {
         cancelBtn.setOnAction(e -> stage.close());
     }
 
-    // Hàm chính: dùng chung cho mọi loại
     public void setup(SecretType type, String header, int maxAttempts, Predicate<String> verifier,
                       Consumer<String> onSuccess, Runnable onFailed) {
         this.secretType = type;
@@ -96,7 +95,6 @@ public class VerifySecretController {
     private void handleVerify() {
         String input = secretField.getText().trim();
 
-        // Kiểm tra định dạng (nếu có regex)
         if (secretType.regex != null && !input.matches(secretType.regex)) {
             attemptsLeft--;
             showError(secretType.invalidMsg);
@@ -157,7 +155,4 @@ public class VerifySecretController {
         }).start();
     }
 
-    public String getInput() {
-        return secretField.getText().trim();
-    }
 }

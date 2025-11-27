@@ -22,10 +22,15 @@ import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.util.List;
 
+import static com.luukien.javacard.utils.EmailHelper.generateOTP;
 import static com.luukien.javacard.utils.EmailHelper.sendEmail;
 
 public class HomeManagementController {
 
+    @FXML
+    private Label emailLabel;
+    @FXML
+    private Button updatePasswordBtn;
     @FXML
     private Label pinLabel;
     @FXML
@@ -266,46 +271,59 @@ public class HomeManagementController {
 
     private void initializeAccountTab() {
         boolean isAdmin = AppState.getInstance().isAdminMode();
+        emailLabel.setText(AppState.getInstance().getCurrentUserEmail());
         pinLabel.setVisible(isAdmin);
         pinPhLabel.setVisible(isAdmin);
         viewPinBtn.setDisable(!isAdmin);
         viewPinBtn.setVisible(isAdmin);
         viewPinBtn.setOnAction(e -> {
+            String currentUserEmail = AppState.getInstance().getCurrentUserEmail();
             CredentialDialog.show(
                     VerifySecretController.SecretType.PASSWORD,
                     "Nhập mật khẩu để tiếp tục",
                     5,
-                    (password) -> AccountService.verifyPassword(password, AppState.getInstance().getCurrentUserEmail()),
+                    (password) -> AccountService.verifyPassword(password, currentUserEmail),
                     (password) -> {
+                        String otp = generateOTP(6);
                         Task<Void> emailTask = new Task<>() {
                             @Override
                             protected Void call() {
-                                sendEmail("kienluu61@gmail.com");
+                                sendEmail(currentUserEmail, otp);
                                 return null;
                             }
                         };
                         new Thread(emailTask).start();
-                        String[] data = AccountService.getEncryptedKeyAndPin(AppState.getInstance().getCurrentUserEmail());
-                        if (data == null) {
-                            ApplicationHelper.showAlert("Không tìm thấy người dùng", true);
-                            return;
-                        }
-                        String encryptedPin = data[0];
-                        String encryptedMasterKey = data[1];
-                        try {
-                            String pin = Argon2KeyDerivation.decryptData(encryptedPin, encryptedMasterKey, password);
-                            ApplicationHelper.showAlert(
-                                    "Ghi nhớ kỹ mã PIN của bạn!\n\nPIN: " + pin,
-                                    false
-                            );
-                        } catch (Exception ex) {
-                            ApplicationHelper.showAlert("Không thể giải mã", true);
-                        }
+
+                        CredentialDialog.show(
+                                VerifySecretController.SecretType.TWO_FACTOR,
+                                "Nhập OTP đã được gửi về email của bạn",
+                                3,
+                                (code) -> code.equals(otp),
+                                (code) -> {
+                                    String[] data = AccountService.getEncryptedKeyAndPin(currentUserEmail);
+                                    if (data == null) {
+                                        ApplicationHelper.showAlert("Không tìm thấy người dùng", true);
+                                        return;
+                                    }
+                                    String encryptedPin = data[0];
+                                    String encryptedMasterKey = data[1];
+                                    try {
+                                        String pin = Argon2KeyDerivation.decryptData(encryptedPin, encryptedMasterKey, password);
+                                        ApplicationHelper.showAlert(
+                                                "Ghi nhớ kỹ mã PIN của bạn!\n\nPIN: " + pin,
+                                                false
+                                        );
+                                    } catch (Exception ex) {
+                                        ApplicationHelper.showAlert("Không thể giải mã", true);
+                                    }
+                                },
+                                null
+                        );
                     },
-                    () -> {
-                    }
+                    null
             );
         });
+
     }
 
 

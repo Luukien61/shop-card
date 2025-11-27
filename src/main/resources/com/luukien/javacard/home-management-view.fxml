@@ -10,7 +10,12 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.effect.Glow?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
 <TabPane fx:id="tabPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="520.0" prefWidth="650.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.HomeManagementController">
@@ -143,13 +148,43 @@
                                 <Font name="System Bold" size="14.0" />
                             </font>
                         </Button>
-                  <Label fx:id="pinLabel" layoutX="124.0" layoutY="173.0" text="PIN" />
-                  <Label fx:id="pinPhLabel" layoutX="205.0" layoutY="173.0" text="******" />
-                  <Button fx:id="viewPinBtn" layoutX="325.0" layoutY="167.0" mnemonicParsing="false" style="-fx-background-color: #0866FF;" text="Xem" textFill="WHITE">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Button>
+                  <GridPane layoutX="33.0" layoutY="56.0" prefHeight="161.0" prefWidth="420.0" style="-fx-border-color: #ff0000; -fx-border-radius: 8;">
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <Label text="Email" />
+                        <Label text="Password" GridPane.rowIndex="1" />
+                        <Label fx:id="pinLabel" text="PIN" GridPane.rowIndex="2" />
+                        <Label fx:id="pinPhLabel" text="******" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                        <Button fx:id="viewPinBtn" mnemonicParsing="false" prefHeight="29.0" prefWidth="71.0" style="-fx-background-color: #0866FF;" text="Xem" textFill="WHITE" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="2">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Button>
+                        <Label fx:id="emailLabel" text="Label" GridPane.columnIndex="1" />
+                        <Label text="********" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <Button fx:id="updatePasswordBtn" mnemonicParsing="false" style="-fx-background-color: #0866FF;" text="Thay đổi" textFill="WHITE" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Button>
+                     </children>
+                     <padding>
+                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                     </padding>
+                  </GridPane>
+                  <ImageView fx:id="imgView" fitHeight="150.0" fitWidth="136.0" layoutX="473.0" layoutY="62.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@img/default-avatar.jpg" />
+                     </image>
+                  </ImageView>
                     </children>
                 </AnchorPane>
             </content>
