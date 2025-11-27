@@ -1,6 +1,7 @@
-package com.luukien.javacard.utils;
+package com.luukien.javacard.dialog;
 
 import com.luukien.javacard.controller.VerifySecretController;
+import com.luukien.javacard.model.SecretType;
 import com.luukien.javacard.screen.Scenes;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -13,14 +14,14 @@ import java.io.IOException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class CredentialDialog {
+public class VerifyCredentialDialog {
 
 
-    public static void show(VerifySecretController.SecretType type, String header, int maxAttempts,
+    public static void show(SecretType type, String header, int maxAttempts,
                             Predicate<String> verifier,
                             Consumer<String> onSuccess, Runnable onFailed) {
         try {
-            FXMLLoader loader = new FXMLLoader(CredentialDialog.class.getResource("/com/luukien/javacard/" + Scenes.VERIFY_PIN_SCENE));
+            FXMLLoader loader = new FXMLLoader(VerifyCredentialDialog.class.getResource("/com/luukien/javacard/" + Scenes.VERIFY_PIN_SCENE));
             Parent root = loader.load();
             VerifySecretController controller = loader.getController();
 

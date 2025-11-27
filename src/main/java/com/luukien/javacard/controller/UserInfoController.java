@@ -1,10 +1,13 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.dialog.UpdateCredentialDialog;
+import com.luukien.javacard.model.SecretType;
 import com.luukien.javacard.model.User;
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
+import com.luukien.javacard.utils.CardHelper;
 import com.luukien.javacard.utils.DatabaseHelper;
 import com.luukien.javacard.utils.DateConverter;
 import javafx.application.Platform;
@@ -12,7 +15,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.stage.Stage;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -21,7 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 
-public class UserInfoController  {
+public class UserInfoController {
 
     @FXML
     private TextField cardIdTextField;
@@ -192,11 +194,17 @@ public class UserInfoController  {
         changePinBtn.setVisible(isAdmin);
         changePinBtn.setManaged(isAdmin);
         changePinBtn.setDisable(!isAdmin);
-        changePinBtn.setOnAction(e -> SceneManager.showModal(Scenes.UPDATE_PIN_SCENE));
+        changePinBtn.setOnAction(e -> {
+            UpdateCredentialDialog.show(
+                    SecretType.PIN,
+                    null,
+                    null,
+                    CardHelper::changeUserPin
+            );
+        });
 
         backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
     }
-
 
 
 }
