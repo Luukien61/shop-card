@@ -197,24 +197,21 @@ public class UserInfoController {
         changePinBtn.setVisible(isAdmin);
         changePinBtn.setManaged(isAdmin);
         changePinBtn.setDisable(!isAdmin);
-        changePinBtn.setOnAction(e -> {
-            VerifyCredentialDialog.show(
-                    SecretType.PASSWORD,
-                    null,
-                    5,
-                    (password) -> AccountService.verifyPassword(password, currentEmail),
-                    (ignore) -> UpdateCredentialDialog.show(
-                            SecretType.PIN,
-                            null,
-                            null,
-                            CardHelper::changeUserPin
-                    ),
-                    null
-            );
+        changePinBtn.setOnAction(e -> VerifyCredentialDialog.show(
+                SecretType.PASSWORD,
+                null,
+                5,
+                (password) -> AccountService.verifyPassword(password, currentEmail),
+                (ignore) -> UpdateCredentialDialog.show(
+                        SecretType.PIN,
+                        null,
+                        null,
+                        CardHelper::changeUserPin
+                ),
+                null
+        ));
 
-        });
-
-        backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
+       // backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
     }
 
 

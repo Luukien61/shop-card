@@ -223,7 +223,7 @@ public class HomeManagementController {
                         User user = getTableRow().getItem();
                         if (user != null && e.getClickCount() == 1) {
                             AppState.getInstance().setCurrentClientPhone(user.getPhone());
-                            SceneManager.switchTo(Scenes.USER_INFO_SCENE);
+                            SceneManager.showModal(Scenes.USER_INFO_SCENE);
                         }
                     });
 
@@ -330,7 +330,7 @@ public class HomeManagementController {
                     SecretType.PASSWORD,
                     null,
                     null,
-                    (oldPass, newPass) -> AccountService.updatePassword(oldPass,newPass,currentUserEmail)
+                    (oldPass, newPass) -> AccountService.updatePassword(oldPass, newPass, currentUserEmail)
             );
         });
     }
