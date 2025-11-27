@@ -42,3 +42,4 @@ bin/
 .DS_Store
 /src/main/java/com/luukien/javacard/utils/CloudinaryHelper.java
 /src/main/java/com/luukien/javacard/utils/EmailHelper.java
+/.env
