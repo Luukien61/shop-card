@@ -36,7 +36,7 @@
                                 <Font name="System Bold" size="24.0" />
                             </font>
                         </Label>
-                        <TextField fx:id="emailField" layoutX="55.0" layoutY="181.0" prefHeight="29.0" prefWidth="214.0" promptText="Email" style="-fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #0866FF;" text="kienluu61@gmail.com">
+                        <TextField fx:id="emailField" layoutX="55.0" layoutY="181.0" prefHeight="29.0" prefWidth="214.0" promptText="Email" style="-fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #0866FF;" text="admin@gmail.com">
                             <font>
                                 <Font size="14.0" />
                             </font>
@@ -44,7 +44,7 @@
                                 <Insets left="16.0" />
                             </padding>
                         </TextField>
-                        <PasswordField fx:id="passwordField" layoutX="56.0" layoutY="235.0" prefHeight="29.0" prefWidth="214.0" promptText="Password" style="-fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #0866FF;" text="123456">
+                        <PasswordField fx:id="passwordField" layoutX="56.0" layoutY="235.0" prefHeight="29.0" prefWidth="214.0" promptText="Password" style="-fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #0866FF;" text="admin123">
                             <font>
                                 <Font size="14.0" />
                             </font>

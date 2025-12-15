@@ -133,6 +133,7 @@ public class HomeManagementController {
         }
         addNewProductBtn.setOnAction(e -> onNewProductBtnClick());
         addNewUserBtn.setOnAction(e -> onNewUserBtnClick());
+        logoutBtn.setOnAction(e -> onLogOutBtnClick());
 
         initializeProductTab();
         initializeOrderTab();
@@ -250,6 +251,8 @@ public class HomeManagementController {
     private void onNewUserBtnClick() {
         SceneManager.switchTo(Scenes.INITIAL_CARD_SCENE);
     }
+
+    private void onLogOutBtnClick(){SceneManager.switchTo(Scenes.LOGIN_SCENE);}
 
     private void handleProductTabSelected() {
         List<Product> items = productService.loadProducts();

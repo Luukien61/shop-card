@@ -12,42 +12,49 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
+import java.security.*;
+import java.security.spec.RSAPublicKeySpec;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 
 public class CardHelper {
-    public static final byte[] AID = {(byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+
+    public static final byte[] AID = {(byte) 0x11, 0x22, 0x33, 0x44, 0x55, 0x00};
+
     public static final byte INS_INITIATE_KEY = (byte) 0x00;
-    public static final byte INS_WRITE_USERNAME = (byte) 0x01;
-    public static final byte INS_WRITE_ADDRESS = (byte) 0x02;
-    public static final byte INS_WRITE_PHONE = (byte) 0x03;
-    public static final byte INS_WRITE_CARD_ID = (byte) 0x04;
-    public static final byte INS_WRITE_USER_PIN = (byte) 0x05;
-    public static final byte INS_WRITE_ADMIN_PIN = (byte) 0x06;
     public static final byte INS_WRITE_AVATAR = (byte) 0x07;
-    public static final byte INS_CLEAR_DATA = (byte) 0x10;
+    public static final byte INS_SET_PINS     = (byte) 0x08;
+
+    public static final byte INS_CLEAR_DATA      = (byte) 0x10;
     public static final byte INS_UPDATE_USER_PIN = (byte) 0x20;
-    public static final byte INS_SET_PINS = (byte) 0x08;
 
     private static final byte INS_WRITE_USERNAME_ENC = (byte) 0x11;
-    private static final byte INS_WRITE_ADDRESS_ENC = (byte) 0x12;
-    private static final byte INS_WRITE_PHONE_ENC = (byte) 0x13;
-    private static final byte INS_WRITE_CARD_ID_ENC = (byte) 0x14;
-    private static final byte INS_READ_USERNAME_DEC = (byte) 0x21;
-    private static final byte INS_READ_ADDRESS_DEC = (byte) 0x22;
-    private static final byte INS_READ_PHONE_DEC = (byte) 0x23;
-    private static final byte INS_READ_CARD_ID_DEC = (byte) 0x24;
+    private static final byte INS_WRITE_ADDRESS_ENC  = (byte) 0x12;
+    private static final byte INS_WRITE_PHONE_ENC    = (byte) 0x13;
+    private static final byte INS_WRITE_CARD_ID_ENC  = (byte) 0x14;
 
-    private static final byte PIN_TYPE_USER = (byte) 0x00;
+    private static final byte INS_READ_USERNAME_DEC = (byte) 0x21;
+    private static final byte INS_READ_ADDRESS_DEC  = (byte) 0x22;
+    private static final byte INS_READ_PHONE_DEC    = (byte) 0x23;
+    private static final byte INS_READ_CARD_ID_DEC  = (byte) 0x24;
+
+    // Card authentication
+    private static final byte INS_SIGN_CHALLENGE = (byte) 0x30;
+
+    private static final byte PIN_TYPE_USER  = (byte) 0x00;
     private static final byte PIN_TYPE_ADMIN = (byte) 0x01;
 
-    public static final String SUCCESS_RESPONSE = "9000";
-
-    private static final SecureRandom random = new SecureRandom();
     public static final int SUCCESS_SW = 0x9000;
+    private static final SecureRandom random = new SecureRandom();
 
+    // IMPORTANT: cache public key of the last generated keypair (so initiateCard can authenticate later)
+    private static String LAST_PUBLIC_KEY_HEX = null;
+
+    // ============================================================
+    // CONNECT / SELECT
+    // ============================================================
 
     public static CardChannel connect() throws CardException {
         TerminalFactory factory = TerminalFactory.getDefault();
@@ -57,17 +64,14 @@ public class CardHelper {
         for (CardTerminal terminal : terminals) {
             System.out.println(" - " + terminal.getName());
         }
+        if (terminals.isEmpty()) throw new CardException("No card terminals found");
 
-        CardTerminal terminal = terminals.getFirst();
+        CardTerminal terminal = terminals.get(0);
         terminal.waitForCardPresent(0);
 
-        Card card = terminal.connect("T=0");
+        Card card = terminal.connect("*");
         CardChannel channel = card.getBasicChannel();
-
-        if (channel == null) {
-            throw new RuntimeException();
-        }
-
+        if (channel == null) throw new CardException("Basic channel is null");
         return channel;
     }
 
@@ -75,353 +79,293 @@ public class CardHelper {
         return new CommandAPDU(0x00, 0xA4, 0x04, 0x00, aid);
     }
 
-
-    public static Boolean initiateCard(String username, String address, String phone, String userPIN, String adminPIN, File avatar, String cardId) {
-        try {
-            CardChannel channel = connect();
-            CommandAPDU select = selectAID(AID);
-            ResponseAPDU resp = channel.transmit(select);
-            if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
-                throw new RuntimeException("unable to select the applet");
-            }
-
-            byte[] usernameData = username.getBytes(StandardCharsets.UTF_8);
-            byte[] addressData = address.getBytes(StandardCharsets.UTF_8);
-            byte[] phoneData = phone.getBytes(StandardCharsets.UTF_8);
-            byte[] cardIdData = cardId.getBytes(StandardCharsets.UTF_8);
-            byte[] userPINData = userPIN.getBytes(StandardCharsets.UTF_8);
-            byte[] adminPINData = adminPIN.getBytes(StandardCharsets.UTF_8);
-            byte[] setPINData = new byte[userPINData.length + adminPINData.length];
-            System.arraycopy(userPINData, 0, setPINData, 0, userPINData.length);
-            System.arraycopy(adminPINData, 0, setPINData, userPINData.length, adminPINData.length);
-
-            BufferedImage original = ImageIO.read(avatar);
-            BufferedImage resized = resize(original, 200, 200);
-            byte[] avatarData = compressImage(resized, 0.6f);
-            System.out.println("Avatar length: " + avatarData.length + " bytes");
-
-            sendData(channel, INS_SET_PINS, setPINData);
-
-//            sendData(channel, INS_WRITE_USERNAME, usernameData);
-//            sendData(channel, INS_WRITE_ADDRESS, addressData);
-//            sendData(channel, INS_WRITE_PHONE, phoneData);
-//            sendData(channel, INS_WRITE_CARD_ID, cardIdData);
-//            sendData(channel, INS_WRITE_USER_PIN, userPINData);
-//            sendData(channel, INS_WRITE_ADMIN_PIN, adminPINData);
-            sendEncryptedData(channel, INS_WRITE_USERNAME_ENC, userPINData, PIN_TYPE_USER, usernameData);
-            sendData(channel, INS_WRITE_AVATAR, avatarData);
-            return true;
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return false;
+    private static void selectOrThrow(CardChannel channel) throws CardException {
+        ResponseAPDU resp = channel.transmit(selectAID(AID));
+        if (resp.getSW() != SUCCESS_SW) {
+            throw new CardException("Unable to select applet. SW=0x" + Integer.toHexString(resp.getSW()));
         }
     }
 
+    // ============================================================
+    // STEP 1: INITIATE KEY + CARD ID (NO AUTH HERE!)
+    // ============================================================
+
+    /**
+     * Chỉ làm: SELECT -> INITIATE_KEY -> cache public key -> return [publicKeyHex, cardId]
+     * KHÔNG gọi SIGN_CHALLENGE ở đây (vì sau CLEAR thì PIN chưa set => 6982).
+     */
     public static String[] initiateKeyAndCardId() {
         try {
             String cardId = generate16Digits();
+
             CardChannel channel = connect();
-            CommandAPDU select = selectAID(AID);
-            ResponseAPDU resp = channel.transmit(select);
-            if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
-                throw new RuntimeException("unable to select the applet");
-            }
-            String publicKey = initiateKey(channel);
-            return new String[]{publicKey, cardId};
+            selectOrThrow(channel);
+
+            String publicKeyHex = initiateKey(channel);
+            LAST_PUBLIC_KEY_HEX = publicKeyHex; // cache for later auth in initiateCard()
+
+            return new String[]{publicKeyHex, cardId};
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("initiateKeyAndCardId error: " + e.getMessage());
             return null;
         }
     }
 
+    private static String initiateKey(CardChannel channel) throws CardException {
+        // Le 256 to avoid 6C83 round-trip
+        CommandAPDU generateKey = new CommandAPDU(0x00, INS_INITIATE_KEY, 0x00, 0x00, 256);
+        ResponseAPDU r = channel.transmit(generateKey);
+
+        if (r.getSW() != SUCCESS_SW) {
+            throw new CardException("INITIATE_KEY failed. SW=0x" + Integer.toHexString(r.getSW()));
+        }
+
+        byte[] publicKeyData = r.getData();
+        String publicKeyHex = HexFormat.of().formatHex(publicKeyData);
+        System.out.println("Public Key(hex): " + publicKeyHex);
+        return publicKeyHex;
+    }
+
+    // ============================================================
+    // STEP 2: WRITE CARD DATA + AUTH AFTER SET_PINS
+    // ============================================================
+
+    public static Boolean initiateCard(String username, String address, String phone,
+                                       String userPIN, String adminPIN, File avatar, String cardId) {
+        try {
+            CardChannel channel = connect();
+            selectOrThrow(channel);
+
+            byte[] userPin6  = pinTo6Bytes(userPIN);
+            byte[] adminPin6 = pinTo6Bytes(adminPIN);
+
+            // 1) SET_PINS first (so SIGN_CHALLENGE can verify admin PIN)
+            byte[] setPINData = new byte[12];
+            System.arraycopy(userPin6, 0, setPINData, 0, 6);
+            System.arraycopy(adminPin6, 0, setPINData, 6, 6);
+            sendOnce(channel, INS_SET_PINS, (byte)0x00, (byte)0x00, setPINData);
+
+            // 2) AUTHENTICATE CARD (Cách 1) AFTER SET_PINS
+            if (LAST_PUBLIC_KEY_HEX == null) {
+                throw new CardException("Missing cached public key. Call initiateKeyAndCardId() first.");
+            }
+            boolean authOk = authenticateCard(channel, LAST_PUBLIC_KEY_HEX, adminPin6);
+            if (!authOk) {
+                throw new CardException("Card authentication verify = false");
+            }
+
+            // 3) WRITE encrypted fields
+            sendEncryptedData(channel, INS_WRITE_USERNAME_ENC, userPin6, PIN_TYPE_USER, username.getBytes(StandardCharsets.UTF_8));
+            sendEncryptedData(channel, INS_WRITE_ADDRESS_ENC,  userPin6, PIN_TYPE_USER, address.getBytes(StandardCharsets.UTF_8));
+            sendEncryptedData(channel, INS_WRITE_PHONE_ENC,    userPin6, PIN_TYPE_USER, phone.getBytes(StandardCharsets.UTF_8));
+            sendEncryptedData(channel, INS_WRITE_CARD_ID_ENC,  userPin6, PIN_TYPE_USER, cardId.getBytes(StandardCharsets.UTF_8));
+
+            // 4) Avatar
+            if (avatar != null) {
+                BufferedImage original = ImageIO.read(avatar);
+                if (original == null) throw new IOException("Cannot read image: " + avatar.getAbsolutePath());
+
+                BufferedImage resized = resize(original, 200, 200);
+                byte[] avatarData = compressImage(resized, 0.6f);
+
+                System.out.println("Avatar length: " + avatarData.length + " bytes");
+                sendAvatar(channel, avatarData);
+            }
+
+            return true;
+        } catch (Exception e) {
+            System.out.println("initiateCard error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // ============================================================
+    // AUTH helpers
+    // ============================================================
+
+    private static boolean authenticateCard(CardChannel channel, String publicKeyHex, byte[] adminPin6) throws Exception {
+        PublicKey rsaPub = parseRsa1024PubFromHex(publicKeyHex);
+
+        byte[] challenge = new byte[32];
+        random.nextBytes(challenge);
+
+        byte[] payload = new byte[6 + challenge.length];
+        System.arraycopy(adminPin6, 0, payload, 0, 6);
+        System.arraycopy(challenge, 0, payload, 6, challenge.length);
+
+        CommandAPDU apdu = new CommandAPDU(0x00, INS_SIGN_CHALLENGE, 0x00, 0x00, payload, 256);
+        ResponseAPDU resp = channel.transmit(apdu);
+        if (resp.getSW() != SUCCESS_SW) {
+            throw new CardException("SIGN_CHALLENGE failed. SW=0x" + Integer.toHexString(resp.getSW()));
+        }
+
+        byte[] sig = resp.getData();
+
+        Signature verifier = Signature.getInstance("SHA1withRSA");
+        verifier.initVerify(rsaPub);
+        verifier.update(challenge);
+
+        boolean ok = verifier.verify(sig);
+        System.out.println("Authenticate card verified = " + ok);
+        return ok;
+    }
+
+    private static PublicKey parseRsa1024PubFromHex(String publicKeyHex) throws Exception {
+        byte[] pub = HexFormat.of().parseHex(publicKeyHex);
+        if (pub.length < 129) throw new IllegalArgumentException("Public key data too short: " + pub.length);
+
+        byte[] mod = Arrays.copyOfRange(pub, 0, 128);
+        byte[] exp = Arrays.copyOfRange(pub, 128, pub.length);
+
+        BigInteger n = new BigInteger(1, mod);
+        BigInteger e = new BigInteger(1, exp);
+
+        return KeyFactory.getInstance("RSA").generatePublic(new RSAPublicKeySpec(n, e));
+    }
+
+    // ============================================================
+    // CLEAR / CHANGE PIN
+    // ============================================================
+
     public static boolean clearCardData() {
         try {
             CardChannel channel = connect();
-            CommandAPDU select = selectAID(AID);
-            ResponseAPDU resp = channel.transmit(select);
-            if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
-                throw new RuntimeException("unable to select the applet");
-            }
+            selectOrThrow(channel);
 
-            CommandAPDU clearData = new CommandAPDU(0x00, INS_CLEAR_DATA, 0x00, 0x00, 0);
+            CommandAPDU clearData = new CommandAPDU(0x00, INS_CLEAR_DATA, 0x00, 0x00);
             ResponseAPDU r = channel.transmit(clearData);
-
-            return r.getSW() == 0x9000;
-        } catch (Exception e) {
+            System.out.println("CLEAR SW = 0x" + Integer.toHexString(r.getSW()));
+            return r.getSW() == SUCCESS_SW;
+        } catch (CardException e) {
+            e.printStackTrace();
             return false;
         }
     }
 
     public static boolean changeUserPin(String currentPin, String newPin) {
-        if (currentPin.length() != 6 || newPin.length() != 6 || !currentPin.matches("\\d{6}") || !newPin.matches("\\d{6}")) {
-            return false;
-        }
         try {
+            byte[] cur = pinTo6Bytes(currentPin);
+            byte[] nxt = pinTo6Bytes(newPin);
+
             CardChannel channel = connect();
-            CommandAPDU select = selectAID(AID);
-            ResponseAPDU resp = channel.transmit(select);
-            if (resp.getSW() != SUCCESS_SW) {
-                throw new RuntimeException("unable to select the applet");
-            }
-            CommandAPDU cmd = new CommandAPDU(
-                    0x00,
-                    INS_UPDATE_USER_PIN,
-                    0x00, 0x00,
-                    (currentPin + newPin).getBytes()
-            );
+            selectOrThrow(channel);
 
-            ResponseAPDU result = channel.transmit(cmd);
-            return result.getSW() == SUCCESS_SW;
+            byte[] payload = new byte[12];
+            System.arraycopy(cur, 0, payload, 0, 6);
+            System.arraycopy(nxt, 0, payload, 6, 6);
 
+            ResponseAPDU r = sendOnce(channel, INS_UPDATE_USER_PIN, (byte)0x00, (byte)0x00, payload);
+            return r.getSW() == SUCCESS_SW;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    private static String initiateKey(CardChannel channel) throws CardException {
-        CommandAPDU generateKey = new CommandAPDU(0x00, INS_INITIATE_KEY, 0x00, 0x00, 0);
-        ResponseAPDU r = channel.transmit(generateKey);
+    // ============================================================
+    // ENCRYPTED WRITE / READ
+    // ============================================================
 
-        if (r.getSW() == 0x9000) {
-            byte[] publicKeyData = r.getData();
-            String publicKeyText = HexFormat.of().formatHex(publicKeyData);
-            System.out.println("Public Key: " + publicKeyText);
-            return publicKeyText;
+    private static void sendEncryptedData(CardChannel channel, byte ins, byte[] pin6,
+                                          byte pinType, byte[] data) throws CardException {
+        if (pin6.length != 6) throw new IllegalArgumentException("PIN must be 6 bytes");
+
+        byte[] payload = new byte[6 + data.length];
+        System.arraycopy(pin6, 0, payload, 0, 6);
+        System.arraycopy(data, 0, payload, 6, data.length);
+
+        CommandAPDU apdu = new CommandAPDU(0x00, ins, pinType, 0x00, payload);
+        ResponseAPDU resp = channel.transmit(apdu);
+
+        if (resp.getSW() != SUCCESS_SW) {
+            throw new CardException("Error writing encrypted data. INS=0x" + Integer.toHexString(ins & 0xFF)
+                    + " SW=0x" + Integer.toHexString(resp.getSW()));
         }
-        return null;
     }
 
-    private static String generate16Digits() {
-        StringBuilder sb = new StringBuilder(16);
+    public static byte[] readEncryptedData(CardChannel channel, byte ins, byte[] pin6, byte pinType) throws CardException {
+        if (pin6.length != 6) throw new IllegalArgumentException("PIN must be 6 bytes");
 
-        sb.append(random.nextInt(9) + 1);
+        CommandAPDU apdu = new CommandAPDU(0x00, ins, pinType, 0x00, pin6, 256);
+        ResponseAPDU resp = channel.transmit(apdu);
 
-        for (int i = 1; i < 16; i++) {
-            sb.append(random.nextInt(10));
+        if (resp.getSW() != SUCCESS_SW) {
+            throw new CardException("Error reading decrypted data. INS=0x" + Integer.toHexString(ins & 0xFF)
+                    + " SW=0x" + Integer.toHexString(resp.getSW()));
         }
-
-        return sb.toString();
+        return resp.getData();
     }
 
-    private static void sendData(CardChannel channel, byte ins, byte[] data) throws CardException {
+    private static String readDecryptedString(
+            CardChannel channel,
+            byte ins,
+            byte pinType,
+            byte[] pin6
+    ) throws Exception {
+
+        byte[] data = readEncryptedData(channel, ins, pin6, pinType);
+        return new String(data, StandardCharsets.UTF_8).trim();
+    }
+
+
+    // ============================================================
+    // AVATAR CHUNK WRITE
+    // ============================================================
+
+    private static void sendAvatar(CardChannel channel, byte[] data) throws CardException {
         int chunkSize = 250;
         for (int offset = 0; offset < data.length; offset += chunkSize) {
             int len = Math.min(chunkSize, data.length - offset);
             byte[] chunk = Arrays.copyOfRange(data, offset, offset + len);
 
             CommandAPDU apdu = new CommandAPDU(
-                    0x00,
-                    ins,
-                    (byte) ((offset >> 8) & 0xFF), // P1 = high byte offset
-                    (byte) (offset & 0xFF), // P2 = low byte offset
+                    0x00, INS_WRITE_AVATAR,
+                    (byte) ((offset >> 8) & 0xFF),
+                    (byte) (offset & 0xFF),
                     chunk
             );
 
             ResponseAPDU resp = channel.transmit(apdu);
-            if (resp.getSW() != 0x9000) {
-                throw new CardException("Error writing data to card: " + Integer.toHexString(resp.getSW()));
+            if (resp.getSW() != SUCCESS_SW) {
+                throw new CardException("Error writing avatar. Offset=" + offset
+                        + " SW=0x" + Integer.toHexString(resp.getSW()));
             }
         }
     }
 
-    public static void sendEncryptedData(CardChannel channel, byte ins, byte[] pin,
-                                         byte pinType, byte[] data) throws CardException {
-        if (pin.length != 6) {
-            throw new IllegalArgumentException("PIN must be 6 bytes");
-        }
+    // ============================================================
+    // LOW-LEVEL
+    // ============================================================
 
-        // Tạo payload: PIN (6 bytes) + data
-        byte[] payload = new byte[6 + data.length];
-        System.arraycopy(pin, 0, payload, 0, 6);
-        System.arraycopy(data, 0, payload, 6, data.length);
-
-        // Gửi APDU với P1 = pinType
-        CommandAPDU apdu = new CommandAPDU(
-                0x00,       // CLA
-                ins,            // INS
-                pinType,        // P1 (0x00=user, 0x01=admin)
-                0x00,           // P2
-                payload         // Data: [6-byte PIN][plaintext data]
-        );
+    private static ResponseAPDU sendOnce(CardChannel channel, byte ins, byte p1, byte p2, byte[] data) throws CardException {
+        CommandAPDU apdu = (data == null)
+                ? new CommandAPDU(0x00, ins, p1, p2)
+                : new CommandAPDU(0x00, ins, p1, p2, data);
 
         ResponseAPDU resp = channel.transmit(apdu);
-        if (resp.getSW() != 0x9000) {
-            throw new CardException("Error writing encrypted data: 0x" +
-                    Integer.toHexString(resp.getSW()));
+        if (resp.getSW() != SUCCESS_SW) {
+            throw new CardException("APDU failed. INS=0x" + Integer.toHexString(ins & 0xFF)
+                    + " SW=0x" + Integer.toHexString(resp.getSW()));
         }
-
-        System.out.println("Encrypted data written successfully");
+        return resp;
     }
 
-    /**
-     * Đọc dữ liệu đã mã hóa từ thẻ và giải mã
-     *
-     * @param channel CardChannel để giao tiếp với thẻ
-     * @param ins     Instruction code (0x21-0x24)
-     * @param pin     6-byte PIN (user hoặc admin)
-     * @param pinType 0x00 = user PIN, 0x01 = admin PIN
-     * @return Dữ liệu đã giải mã (plaintext)
-     * @throws CardException
-     */
-    public static byte[] readEncryptedData(CardChannel channel, byte ins, byte[] pin,
-                                           byte pinType) throws CardException {
-        if (pin.length != 6) {
-            throw new IllegalArgumentException("PIN must be 6 bytes");
+    // ============================================================
+    // UTIL
+    // ============================================================
+
+    private static byte[] pinTo6Bytes(String pin) {
+        if (pin == null || pin.length() != 6 || !pin.matches("\\d{6}")) {
+            throw new IllegalArgumentException("PIN must be exactly 6 digits");
         }
-
-        // Gửi APDU với PIN để yêu cầu giải mã
-        CommandAPDU apdu = new CommandAPDU(
-                0x00,       // CLA
-                ins,            // INS
-                pinType,        // P1 (0x00=user, 0x01=admin)
-                0x00,           // P2
-                pin,            // Data: 6-byte PIN
-                256             // Le: Expect up to 256 bytes response
-        );
-
-        ResponseAPDU resp = channel.transmit(apdu);
-        if (resp.getSW() != 0x9000) {
-            throw new CardException("Error reading encrypted data: 0x" +
-                    Integer.toHexString(resp.getSW()));
-        }
-
-        byte[] decryptedData = resp.getData();
-        System.out.println("Read " + decryptedData.length + " bytes of decrypted data");
-
-        return decryptedData;
+        return pin.getBytes(StandardCharsets.US_ASCII);
     }
 
-    /**
-     * Helper: Ghi username đã mã hóa
-     */
-    public static void writeEncryptedUsername(CardChannel channel, byte[] pin,
-                                              byte pinType, String username) throws CardException {
-        sendEncryptedData(channel, INS_WRITE_USERNAME_ENC, pin, pinType,
-                username.getBytes(StandardCharsets.UTF_8));
-    }
-
-    /**
-     * Helper: Đọc username đã giải mã
-     */
-    public static String readEncryptedUsername(CardChannel channel, byte[] pin,
-                                               byte pinType) throws Exception {
-        byte[] data = readEncryptedData(channel, INS_READ_USERNAME_DEC, pin, pinType);
-        return new String(data, "UTF-8");
-    }
-
-    /**
-     * Helper: Ghi address đã mã hóa
-     */
-    public static void writeEncryptedAddress(CardChannel channel, byte[] pin,
-                                             byte pinType, String address) throws Exception {
-        sendEncryptedData(channel, INS_WRITE_ADDRESS_ENC, pin, pinType,
-                address.getBytes("UTF-8"));
-    }
-
-    /**
-     * Helper: Đọc address đã giải mã
-     */
-    public static String readEncryptedAddress(CardChannel channel, byte[] pin,
-                                              byte pinType) throws Exception {
-        byte[] data = readEncryptedData(channel, INS_READ_ADDRESS_DEC, pin, pinType);
-        return new String(data, "UTF-8");
-    }
-
-    /**
-     * Helper: Ghi phone đã mã hóa
-     */
-    public static void writeEncryptedPhone(CardChannel channel, byte[] pin,
-                                           byte pinType, String phone) throws Exception {
-        sendEncryptedData(channel, INS_WRITE_PHONE_ENC, pin, pinType,
-                phone.getBytes("UTF-8"));
-    }
-
-    /**
-     * Helper: Đọc phone đã giải mã
-     */
-    public static String readEncryptedPhone(CardChannel channel, byte[] pin,
-                                            byte pinType) throws Exception {
-        byte[] data = readEncryptedData(channel, INS_READ_PHONE_DEC, pin, pinType);
-        return new String(data, "UTF-8");
-    }
-
-    /**
-     * Helper: Ghi card ID đã mã hóa
-     */
-    public static void writeEncryptedCardId(CardChannel channel, byte[] pin,
-                                            byte pinType, String cardId) throws Exception {
-        sendEncryptedData(channel, INS_WRITE_CARD_ID_ENC, pin, pinType,
-                cardId.getBytes("UTF-8"));
-    }
-
-    /**
-     * Helper: Đọc card ID đã giải mã
-     */
-    public static String readEncryptedCardId(CardChannel channel, byte[] pin,
-                                             byte pinType) throws Exception {
-        byte[] data = readEncryptedData(channel, INS_READ_CARD_ID_DEC, pin, pinType);
-        return new String(data, "UTF-8");
-    }
-
-    // ===================================================================
-    // DEMO USAGE
-    // ===================================================================
-    public static void main(String[] args) {
-        try {
-            // Kết nối với thẻ
-            TerminalFactory factory = TerminalFactory.getDefault();
-            CardTerminal terminal = factory.terminals().list().get(0);
-            Card card = terminal.connect("T=1");
-            CardChannel channel = card.getBasicChannel();
-
-            // Select applet (thay AID phù hợp)
-            byte[] aid = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
-            CommandAPDU select = new CommandAPDU(0x00, 0xA4, 0x04, 0x00, aid);
-            ResponseAPDU resp = channel.transmit(select);
-
-            if (resp.getSW() != 0x9000) {
-                System.err.println("Failed to select applet");
-                return;
-            }
-
-            // User PIN (6 bytes)
-            byte[] userPin = {0x31, 0x32, 0x33, 0x34, 0x35, 0x36}; // "123456"
-
-            // Ghi dữ liệu mã hóa
-            System.out.println("\n=== Writing encrypted data ===");
-            writeEncryptedUsername(channel, userPin, PIN_TYPE_USER, "Nguyen Van A");
-            writeEncryptedAddress(channel, userPin, PIN_TYPE_USER, "123 Hai Ba Trung, Hanoi");
-            writeEncryptedPhone(channel, userPin, PIN_TYPE_USER, "+84912345678");
-            writeEncryptedCardId(channel, userPin, PIN_TYPE_USER, "CARD-2024-001");
-
-            // Đọc dữ liệu đã mã hóa
-            System.out.println("\n=== Reading encrypted data ===");
-            String username = readEncryptedUsername(channel, userPin, PIN_TYPE_USER);
-            String address = readEncryptedAddress(channel, userPin, PIN_TYPE_USER);
-            String phone = readEncryptedPhone(channel, userPin, PIN_TYPE_USER);
-            String cardId = readEncryptedCardId(channel, userPin, PIN_TYPE_USER);
-
-            System.out.println("Username: " + username);
-            System.out.println("Address: " + address);
-            System.out.println("Phone: " + phone);
-            System.out.println("Card ID: " + cardId);
-
-            // Test với sai PIN (sẽ throw exception)
-            System.out.println("\n=== Testing wrong PIN ===");
-            byte[] wrongPin = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            try {
-                readEncryptedUsername(channel, wrongPin, PIN_TYPE_USER);
-            } catch (CardException e) {
-                System.out.println("Expected error with wrong PIN: " + e.getMessage());
-            }
-
-            card.disconnect(false);
-            System.out.println("\nDone!");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private static String generate16Digits() {
+        StringBuilder sb = new StringBuilder(16);
+        sb.append(random.nextInt(9) + 1);
+        for (int i = 1; i < 16; i++) sb.append(random.nextInt(10));
+        return sb.toString();
     }
 
     private static byte[] compressImage(BufferedImage image, float quality) throws IOException {
@@ -432,7 +376,7 @@ public class CardHelper {
 
         if (param.canWriteCompressed()) {
             param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            param.setCompressionQuality(quality); // 0.0f → thấp nhất, 1.0f → tốt nhất
+            param.setCompressionQuality(quality);
         }
 
         writer.setOutput(new MemoryCacheImageOutputStream(baos));
@@ -449,4 +393,58 @@ public class CardHelper {
         g.dispose();
         return resizedImage;
     }
+
+
+    public static boolean adminUnlockAndVerifyCard(
+            String expectedCardId,
+            String publicKeyHexFromDb,
+            String adminPin
+    ) throws Exception {
+
+        CardChannel channel = connect();
+        selectOrThrow(channel);
+
+        byte[] pin6 = pinTo6Bytes(adminPin);
+
+        // 1️⃣ Đọc cardId từ thẻ (admin)
+        String cardIdOnCard = readDecryptedString(
+                channel,
+                INS_READ_CARD_ID_DEC,
+                PIN_TYPE_ADMIN,
+                pin6
+        );
+
+        if (!expectedCardId.trim().equals(cardIdOnCard)) {
+            throw new CardException("Sai thẻ: CardId không khớp");
+        }
+
+        // 2️⃣ RSA challenge-response
+        boolean verified = authenticateCard(
+                channel,
+                publicKeyHexFromDb, // 🔥 lấy từ DB
+                pin6
+        );
+
+        if (!verified) {
+            throw new CardException("Xác thực RSA thất bại");
+        }
+
+        return true;
+    }
+
+    public static com.luukien.javacard.model.CardProfile readProfileAsAdmin(String adminPin) throws Exception {
+        CardChannel ch = connect();
+        selectOrThrow(ch);
+
+        byte[] pin6 = pinTo6Bytes(adminPin);
+
+        String name    = readDecryptedString(ch, INS_READ_USERNAME_DEC, PIN_TYPE_ADMIN, pin6);
+        String phone   = readDecryptedString(ch, INS_READ_PHONE_DEC,   PIN_TYPE_ADMIN, pin6);
+        String address = readDecryptedString(ch, INS_READ_ADDRESS_DEC, PIN_TYPE_ADMIN, pin6);
+        String cardId  = readDecryptedString(ch, INS_READ_CARD_ID_DEC, PIN_TYPE_ADMIN, pin6);
+
+        return new com.luukien.javacard.model.CardProfile(cardId, name, phone, address);
+    }
+
+
 }

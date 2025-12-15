@@ -15,6 +15,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
+<?import javafx.scene.layout.Region?>
 <AnchorPane prefHeight="500.0" prefWidth="650.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.UserInfoController">
     <children>
         <Label layoutX="26.0" layoutY="66.0" prefHeight="32.0" prefWidth="597.0" style="-fx-background-color: #0866FF; -fx-background-radius: 8;" text="Thông tin người dùng" textFill="WHITE">
@@ -94,20 +95,32 @@
                     </children>
                 </HBox>
                 <Label text="Số dư" GridPane.rowIndex="6" />
-                <Label fx:id="balanceLabel" text="10000 (Bzone)" GridPane.columnIndex="1" GridPane.rowIndex="6">
-                    <font>
-                        <Font name="System Bold" size="14.0" />
-                    </font>
-                </Label>
-                <Label text="PIN" GridPane.rowIndex="7" />
-                <Label text="******" GridPane.columnIndex="1" GridPane.rowIndex="7">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Label>
+                <HBox GridPane.columnIndex="1"
+                      GridPane.rowIndex="6"
+                      alignment="CENTER_LEFT"
+                      spacing="12"
+                      prefHeight="30">
+                    <children>
+                        <Label fx:id="balanceLabel" text="0 đ - Hạng: Đồng">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+
+                        <Region HBox.hgrow="ALWAYS" />
+
+                        <Button fx:id="topupBtn"
+                                mnemonicParsing="false"
+                                prefHeight="26"
+                                style="-fx-background-color: #22c55e;"
+                                text="Nạp tiền"
+                                textFill="WHITE" />
+                    </children>
+                </HBox>
+
                 <Button fx:id="changePinBtn" mnemonicParsing="false" style="-fx-background-color: #0866FF;" text="Thay đổi" textFill="WHITE" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="7">
                     <GridPane.margin>
-                        <Insets bottom="8.0" right="16.0" />
+                        <Insets bottom="8.0" right="1.0" />
                     </GridPane.margin>
                 </Button>
             </children>
@@ -131,6 +144,13 @@
                 <Font size="14.0" />
             </font>
         </Label>
+        <Button fx:id="loadFromCardBtn"
+                layoutX="470.0" layoutY="25.0"
+                mnemonicParsing="false"
+                style="-fx-background-color: #0ea5e9;"
+                text="Tải từ thẻ"
+                textFill="WHITE" />
+
         <Button fx:id="unlockBtn" layoutX="568.0" layoutY="25.0" mnemonicParsing="false" style="-fx-background-color: #ff0000;" text="Unlock" textFill="WHITE" />
         <Button fx:id="backButton" layoutX="26.0" layoutY="25.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Quay lại" />
     </children>
