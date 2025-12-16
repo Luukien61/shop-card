@@ -149,6 +149,31 @@ public class DatabaseHelper {
         }
     }
 
+    public static String getUserPublicKey(String cardId) {
+        String sql = """
+                SELECT public_key from users
+                where card_id = ?
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, cardId);
+
+            ResultSet resultSet = pstmt.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getString("public_key");
+            } else {
+                throw new RuntimeException("Unable to retrieve the public key");
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi thêm user vào DB: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
     public static int deleteIncompleteUser(String phone, String cardId) {
         if (cardId == null || cardId.isBlank() || phone == null || phone.isBlank()) {
             return 0;

@@ -10,6 +10,10 @@ import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 public class CredentialUpdateController implements DialogController {
@@ -26,6 +30,8 @@ public class CredentialUpdateController implements DialogController {
     private Label newLabel;
     @FXML
     private Button actionButton;
+    @FXML
+    private Label warningLabel;
 
     @FXML
     private PasswordField currentField;
@@ -54,12 +60,22 @@ public class CredentialUpdateController implements DialogController {
     private boolean success = false;
 
     private SecretType secretType = SecretType.PIN;
-
     private BiFunction<String, String, Boolean> updateAction;
 
-    // Dùng để validate định dạng mới
+    // Validation
     private String requiredPattern = ".*";
     private String patternDescription = "giá trị";
+
+    // Giới hạn số lần thử
+    private static final int MAX_ATTEMPTS = 5;
+    private static final int LOCKOUT_MINUTES = 5;
+
+    // Lưu trạng thái cho từng loại secret (PIN, PASSWORD, etc.)
+    private static final Map<String, Integer> attemptCountMap = new HashMap<>();
+    private static final Map<String, LocalDateTime> lockoutTimeMap = new HashMap<>();
+
+    private String attemptKey; // Key để track số lần thử cho secret type hiện tại
+    private int remainingAttempts;
 
     @FXML
     private void initialize() {
@@ -81,8 +97,8 @@ public class CredentialUpdateController implements DialogController {
                       String customInstruction,
                       BiFunction<String, String, Boolean> updateAction) {
         this.secretType = type;
-
         this.updateAction = updateAction;
+        this.attemptKey = type.name(); // Sử dụng tên của SecretType làm key
 
         titleLabel.setText(customTitle != null && !customTitle.isBlank()
                 ? customTitle
@@ -117,9 +133,6 @@ public class CredentialUpdateController implements DialogController {
         confirmText.setPromptText(confirmPromptText);
         confirmField.setPromptText(confirmPromptText);
 
-
-//        actionButton.setText("Đổi " + type.label.toLowerCase());
-
         if (type.regex != null) {
             this.requiredPattern = type.regex;
             this.patternDescription = getDescriptionFromType(type);
@@ -129,7 +142,93 @@ public class CredentialUpdateController implements DialogController {
         }
 
         clearAllFields();
+        checkLockoutStatus();
         Platform.runLater(() -> currentField.requestFocus());
+    }
+
+    private void checkLockoutStatus() {
+        if (isLockedOut()) {
+            long minutesRemaining = getRemainingLockoutMinutes();
+            disableInputs();
+            updateWarningLabel("Tài khoản đã bị khóa do nhập sai quá nhiều lần.\n" +
+                    "Vui lòng thử lại sau " + minutesRemaining + " phút.");
+        } else {
+            enableInputs();
+            updateAttemptCounter();
+        }
+    }
+
+    private boolean isLockedOut() {
+        LocalDateTime lockoutTime = lockoutTimeMap.get(attemptKey);
+        if (lockoutTime == null) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(lockoutTime)) {
+            return true;
+        } else {
+            // Hết thời gian khóa, reset
+            lockoutTimeMap.remove(attemptKey);
+            attemptCountMap.put(attemptKey, 0);
+            return false;
+        }
+    }
+
+    private long getRemainingLockoutMinutes() {
+        LocalDateTime lockoutTime = lockoutTimeMap.get(attemptKey);
+        if (lockoutTime == null) {
+            return 0;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        Duration duration = Duration.between(now, lockoutTime);
+        return Math.max(1, duration.toMinutes());
+    }
+
+    private void updateAttemptCounter() {
+        int attempts = attemptCountMap.getOrDefault(attemptKey, 0);
+        remainingAttempts = MAX_ATTEMPTS - attempts;
+
+        if (attempts > 0 && attempts < MAX_ATTEMPTS) {
+            updateWarningLabel("Cảnh báo: Còn " + remainingAttempts + " lần thử");
+        } else if (attempts == 0) {
+            updateWarningLabel("");
+        }
+    }
+
+    private void updateWarningLabel(String message) {
+        if (warningLabel != null) {
+            warningLabel.setText(message);
+            warningLabel.setVisible(!message.isEmpty());
+            warningLabel.setManaged(!message.isEmpty());
+        }
+    }
+
+    private void disableInputs() {
+        currentField.setDisable(true);
+        currentText.setDisable(true);
+        newField.setDisable(true);
+        newText.setDisable(true);
+        confirmField.setDisable(true);
+        confirmText.setDisable(true);
+        actionButton.setDisable(true);
+        showCurrentCheck.setDisable(true);
+        showNewCheck.setDisable(true);
+        showConfirmCheck.setDisable(true);
+    }
+
+    private void enableInputs() {
+        currentField.setDisable(false);
+        currentText.setDisable(false);
+        newField.setDisable(false);
+        newText.setDisable(false);
+        confirmField.setDisable(false);
+        confirmText.setDisable(false);
+        actionButton.setDisable(false);
+        showCurrentCheck.setDisable(false);
+        showNewCheck.setDisable(false);
+        showConfirmCheck.setDisable(false);
     }
 
     private String getDescriptionFromType(SecretType type) {
@@ -156,6 +255,14 @@ public class CredentialUpdateController implements DialogController {
 
     @FXML
     private void onConfirm() {
+        // Kiểm tra lockout trước khi xử lý
+        if (isLockedOut()) {
+            long minutesRemaining = getRemainingLockoutMinutes();
+            ApplicationHelper.showAlert("Tài khoản đã bị khóa.\nVui lòng thử lại sau " +
+                    minutesRemaining + " phút.", true);
+            return;
+        }
+
         String current = currentField.getText().trim();
         String newVal = newField.getText();
         String confirm = confirmField.getText();
@@ -189,18 +296,51 @@ public class CredentialUpdateController implements DialogController {
             return;
         }
 
+        // Thực hiện update
         boolean result = updateAction.apply(current, newVal);
         if (result) {
             ApplicationHelper.showAlert("Đổi " + secretType.label.toLowerCase() + " thành công!", false);
             success = true;
+            // Reset counter khi thành công
+            attemptCountMap.put(attemptKey, 0);
             dialogStage.close();
         } else {
-            ApplicationHelper.showAlert(secretType.label + " hiện tại không đúng!", true);
+            handleFailedAttempt();
+        }
+    }
+
+    private void handleFailedAttempt() {
+        int attempts = attemptCountMap.getOrDefault(attemptKey, 0) + 1;
+        attemptCountMap.put(attemptKey, attempts);
+
+        if (attempts >= MAX_ATTEMPTS) {
+
+            LocalDateTime lockoutTime = LocalDateTime.now().plusMinutes(LOCKOUT_MINUTES);
+            lockoutTimeMap.put(attemptKey, lockoutTime);
+
+            disableInputs();
+            updateWarningLabel("Tài khoản đã bị khóa do nhập sai quá nhiều lần.\n" +
+                    "Vui lòng thử lại sau " + LOCKOUT_MINUTES + " phút.");
+
+            ApplicationHelper.showAlert(
+                    "Bạn đã nhập sai " + MAX_ATTEMPTS + " lần!\n" +
+                            "Tài khoản đã bị khóa trong " + LOCKOUT_MINUTES + " phút.",
+                    true
+            );
+        } else {
+            remainingAttempts = MAX_ATTEMPTS - attempts;
+            updateAttemptCounter();
+
+            ApplicationHelper.showAlert(
+                    secretType.label + " hiện tại không đúng!\n" +
+                            "Còn " + remainingAttempts + " lần thử.",
+                    true
+            );
+
             currentField.clear();
             currentField.requestFocus();
         }
     }
-
 
     private boolean typeHasFixedLength() {
         return requiredPattern.equals("\\d{6}") || requiredPattern.equals("\\d{6,8}");
@@ -213,5 +353,24 @@ public class CredentialUpdateController implements DialogController {
     @FXML
     private void onCancel() {
         dialogStage.close();
+    }
+
+    // Các phương thức static để quản lý trạng thái từ bên ngoài
+    public static void resetAttempts(String secretTypeKey) {
+        attemptCountMap.put(secretTypeKey, 0);
+        lockoutTimeMap.remove(secretTypeKey);
+    }
+
+    public static boolean isSecretLocked(String secretTypeKey) {
+        LocalDateTime lockoutTime = lockoutTimeMap.get(secretTypeKey);
+        if (lockoutTime == null) {
+            return false;
+        }
+        return LocalDateTime.now().isBefore(lockoutTime);
+    }
+
+    public static int getRemainingAttempts(String secretTypeKey) {
+        int attempts = attemptCountMap.getOrDefault(secretTypeKey, 0);
+        return MAX_ATTEMPTS - attempts;
     }
 }

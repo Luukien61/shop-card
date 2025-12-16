@@ -14,6 +14,7 @@ import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
 import com.luukien.javacard.utils.Argon2KeyDerivation;
 import com.luukien.javacard.dialog.VerifyCredentialDialog;
+import com.luukien.javacard.utils.CardHelper;
 import com.luukien.javacard.utils.DateConverter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,6 +23,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import javax.smartcardio.CardException;
 import java.util.List;
 
 import static com.luukien.javacard.utils.EmailHelper.generateOTP;
@@ -192,6 +194,13 @@ public class HomeManagementController {
         orderPaneTab.setOnSelectionChanged(event -> {
             if (orderPaneTab.isSelected()) {
 
+            }
+        });
+        createOrderBtn.setOnAction(e-> {
+            try {
+                CardHelper.readData("123456");
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
             }
         });
     }
