@@ -11,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.Channel;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -35,7 +36,7 @@ public class CardHelper {
     public static final byte INS_READ_ALL_DATA = (byte) 0x55;
     public static final byte INS_READ_AVATAR = (byte) 0x54;
     public static final byte INS_READ_CARD_ID = (byte) 0x53;
-    public static final byte INS_VERIFY_CARD = (byte) 0x61;
+    public static final byte INS_VERIFY_CARD = (byte) 0x11;
 
 
     public static final String SUCCESS_RESPONSE = "9000";
@@ -107,6 +108,7 @@ public class CardHelper {
                     withUserPin(userPINData, phoneData));
 
             sendData(channel, INS_WRITE_CARD_ID, cardIdData);
+
 
             //sendEncryptedData(channel, INS_WRITE_USERNAME_ENC, userPINData, PIN_TYPE_USER, usernameData);
             sendAvatarData(channel, INS_WRITE_AVATAR, userPINData, avatarData);
@@ -345,6 +347,7 @@ public class CardHelper {
     private static void readData(CardChannel channel, byte ins, byte[] pin) throws Exception {
 
         ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+        //boolean isVerified = verifyCard(channel);
 
         // Lần đầu đọc với P1P2 = 0
         short offset = 0;
@@ -492,7 +495,7 @@ public class CardHelper {
         System.out.println("CardId: " + cardId);
         String publicKey = DatabaseHelper.getUserPublicKey(cardId);
         System.out.println("Public key: " + publicKey);
-        boolean isVerified = verifyCard(publicKey);
+        boolean isVerified = verifyCard(channel, publicKey);
 
     }
 
@@ -527,34 +530,28 @@ public class CardHelper {
         return publicKey;
     }
 
-    public static boolean verifyCard( String publicKeyBase64) throws Exception {
+    public static boolean verifyCard(CardChannel channel, String publicKeyBase64) throws Exception {
 
-        CardChannel channel = connect();
-        CommandAPDU select = selectAID(AID);
-        ResponseAPDU resp = channel.transmit(select);
-        if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
-            throw new RuntimeException("unable to select the applet");
-        }
         byte[] pubKeyData = Base64.getDecoder().decode(publicKeyBase64);
         PublicKey publicKey = parsePublicKey(pubKeyData);
 
-        // Generate 32-byte random challenge
+
         SecureRandom random = new SecureRandom();
-        byte[] challenge = new byte[32];
+        byte[] challenge = new byte[16];
         random.nextBytes(challenge);
+
 
         System.out.println("Challenge: " + bytesToHex(challenge));
 
-        // Send challenge to card
-        byte[] command = new byte[37];
-        command[0] = (byte) 0x00;
-        command[1] = INS_VERIFY_CARD;
-        command[2] = (byte) 0x00;
-        command[3] = (byte) 0x00;
-        command[4] = (byte) 0x20;  // 32 bytes
-        System.arraycopy(challenge, 0, command, 5, 32);
+        CommandAPDU command = new CommandAPDU(
+                0x00,                    // CLA
+                INS_VERIFY_CARD,        // INS
+                0x00,                    // P1
+                0x00,                    // P2
+                challenge
+        );
 
-        ResponseAPDU response = channel.transmit(new CommandAPDU(command));
+        ResponseAPDU response = channel.transmit(command);
 
         if (response.getSW() != SUCCESS_SW) {
             throw new CardException(
@@ -563,6 +560,7 @@ public class CardHelper {
         }
 
         byte[] signature = response.getData();
+        System.out.println("Signature length: " + signature.length);
         System.out.println("Signature: " + bytesToHex(signature));
 
         // Verify signature with public key
@@ -573,7 +571,7 @@ public class CardHelper {
         boolean isValid = verifier.verify(signature);
 
         System.out.println("Signature valid: " + isValid);
-        return isValid;
+        return false;
     }
 
     /**
