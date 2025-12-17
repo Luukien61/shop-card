@@ -129,9 +129,7 @@ public class UserInfoController {
             default -> tier;
         };
 
-        return "%s đ - Hạng: %s".formatted(
-                String.format("%,.0f", balance), tierDisplay
-        );
+        return String.format("%,.0f", balance);
     }
 
     private User getDetailUser(String phone) {

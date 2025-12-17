@@ -27,12 +27,6 @@ public class User {
     private String gender;
     private BigDecimal quarter_spending;
 
-    public String getFormattedBalance() {
-        if (balance == null) {
-            return "0 ₫";
-        }
-        return String.format("%,.0f ₫", balance);
-    }
 
     public User(String userName, String address, String phone, String memberTier) {
         this.userName = userName;

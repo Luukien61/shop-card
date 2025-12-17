@@ -174,6 +174,7 @@ public class DatabaseHelper {
     }
 
 
+
     public static int deleteIncompleteUser(String phone, String cardId) {
         if (cardId == null || cardId.isBlank() || phone == null || phone.isBlank()) {
             return 0;

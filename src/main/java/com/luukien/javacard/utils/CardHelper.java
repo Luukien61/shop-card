@@ -1,5 +1,7 @@
 package com.luukien.javacard.utils;
 
+import com.luukien.javacard.model.UserCardInfo;
+
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
@@ -32,10 +34,11 @@ public class CardHelper {
     public static final byte INS_WRITE_AVATAR = (byte) 0x07;
     public static final byte INS_CLEAR_DATA = (byte) 0x10;
     public static final byte INS_UPDATE_USER_PIN = (byte) 0x20;
+    public static final byte INS_VERIFY_PIN = (byte) 0x40;
     public static final byte INS_READ_ALL_DATA = (byte) 0x55;
     public static final byte INS_READ_AVATAR = (byte) 0x54;
     public static final byte INS_READ_CARD_ID = (byte) 0x53;
-    public static final byte INS_VERIFY_CARD = (byte) 0x61;
+    public static final byte INS_VERIFY_CARD = (byte) 0x11;
 
 
     public static final String SUCCESS_RESPONSE = "9000";
@@ -60,7 +63,7 @@ public class CardHelper {
         CardChannel channel = card.getBasicChannel();
 
         if (channel == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("Vui lòng cắm thẻ...");
         }
 
         return channel;
@@ -107,6 +110,7 @@ public class CardHelper {
                     withUserPin(userPINData, phoneData));
 
             sendData(channel, INS_WRITE_CARD_ID, cardIdData);
+
 
             //sendEncryptedData(channel, INS_WRITE_USERNAME_ENC, userPINData, PIN_TYPE_USER, usernameData);
             sendAvatarData(channel, INS_WRITE_AVATAR, userPINData, avatarData);
@@ -255,21 +259,47 @@ public class CardHelper {
     }
 
     private static byte[] setPinDataWithTimestamp(String currentPin, String newPin) {
-        long currentTimestamp = System.currentTimeMillis() / 1000;
-        System.out.println("current: " + currentTimestamp);
 
+        byte[] data = new byte[16];
+        System.arraycopy(currentPin.getBytes(), 0, data, 0, 6);
+        System.arraycopy(newPin.getBytes(), 0, data, 6, 6);
+
+        return setWithTimestamp(data);
+    }
+
+    private static byte[] setWithTimestamp(byte[] data) {
+        long currentTimestamp = System.currentTimeMillis() / 1000;
         byte[] timestampBytes = new byte[4];
         timestampBytes[0] = (byte) ((currentTimestamp >> 24) & 0xFF);
         timestampBytes[1] = (byte) ((currentTimestamp >> 16) & 0xFF);
         timestampBytes[2] = (byte) ((currentTimestamp >> 8) & 0xFF);
         timestampBytes[3] = (byte) (currentTimestamp & 0xFF);
+        int length = data.length;
+        byte[] newData = new byte[length + 4];
+        System.arraycopy(data, 0, newData, 0, length);
+        System.arraycopy(timestampBytes, 0, newData, length, 4);
+        return newData;
+    }
 
-        byte[] data = new byte[16];
-        System.arraycopy(currentPin.getBytes(), 0, data, 0, 6);
-        System.arraycopy(newPin.getBytes(), 0, data, 6, 6);
-        System.arraycopy(timestampBytes, 0, data, 12, 4);
-        System.out.println("Data: " + Arrays.toString(data));
-        return data;
+    public static Boolean verifyUserPin(String pin) throws CardException {
+        CardChannel channel = connect();
+        CommandAPDU select = selectAID(AID);
+        ResponseAPDU resp = channel.transmit(select);
+        if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
+            throw new RuntimeException("unable to select the applet");
+        }
+        byte[] data = setWithTimestamp(pin.getBytes(StandardCharsets.UTF_8));
+
+        CommandAPDU apdu = new CommandAPDU(
+                0x00,
+                INS_VERIFY_PIN,
+                0x00,
+                0x00,
+                data
+        );
+
+        resp = channel.transmit(apdu);
+        return  resp.getSW() == SUCCESS_SW;
     }
 
 
@@ -330,8 +360,20 @@ public class CardHelper {
         }
     }
 
+    public static Boolean isCardVerified() throws Exception {
+        CardChannel channel = connect();
+        CommandAPDU select = selectAID(AID);
+        ResponseAPDU resp = channel.transmit(select);
+        if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
+            throw new RuntimeException("unable to select the applet");
+        }
+        String cardId = readCardId();
+        String publicKey = DatabaseHelper.getUserPublicKey(cardId);
+        return verifyCard(channel, publicKey);
+    }
 
-    public static void readData(String pin) throws Exception {
+
+    public static UserCardInfo getUserCardInfo(String pin) throws Exception {
         CardChannel channel = connect();
         CommandAPDU select = selectAID(AID);
         ResponseAPDU resp = channel.transmit(select);
@@ -339,14 +381,13 @@ public class CardHelper {
             throw new RuntimeException("unable to select the applet");
         }
         byte[] pinData = pin.getBytes(StandardCharsets.UTF_8);
-        readData(channel, INS_READ_ALL_DATA, pinData);
+        return readData(channel, INS_READ_ALL_DATA, pinData);
     }
 
-    private static void readData(CardChannel channel, byte ins, byte[] pin) throws Exception {
+    private static UserCardInfo readData(CardChannel channel, byte ins, byte[] pin) throws Exception {
 
         ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
 
-        // Lần đầu đọc với P1P2 = 0
         short offset = 0;
         byte[] command = new byte[11]; // CLA INS P1 P2 LC + 6 PIN
         command[0] = (byte) 0x00; // CLA
@@ -413,16 +454,26 @@ public class CardHelper {
         byte[] cardId = new byte[cardIdLen];
         System.arraycopy(allData, pos, cardId, 0, cardIdLen);
 
-        System.out.println("Name: " + new String(name, StandardCharsets.UTF_8));
-        System.out.println("Address: " + new String(address, StandardCharsets.UTF_8));
-        System.out.println("Phone: " + new String(phone, StandardCharsets.UTF_8));
-        System.out.println("CardId: " + new String(cardId, StandardCharsets.UTF_8));
-
-        readAvatar(channel, pin, INS_READ_AVATAR);
-        readCardId();
+        String userName = new String(name, StandardCharsets.UTF_8);
+        System.out.println("Name: " + userName);
+        String userAddress = new String(address, StandardCharsets.UTF_8);
+        System.out.println("Address: " + userAddress);
+        String userPhone = new String(phone, StandardCharsets.UTF_8);
+        System.out.println("Phone: " + userPhone);
+        String userCardId = new String(cardId, StandardCharsets.UTF_8);
+        System.out.println("CardId: " + userCardId);
+        byte[] avatar = readAvatar(channel, pin, INS_READ_AVATAR);
+        String avatarBase64 = Base64.getEncoder().encodeToString(avatar);
+        return UserCardInfo.builder()
+                .userName(userName)
+                .address(userAddress)
+                .phone(userPhone)
+                .image(avatarBase64)
+                .cardId(userCardId)
+                .build();
     }
 
-    public static byte[] readAvatar(CardChannel channel, byte[] pin, byte ins)
+    private static byte[] readAvatar(CardChannel channel, byte[] pin, byte ins)
             throws CardException {
 
         ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
@@ -468,7 +519,7 @@ public class CardHelper {
         return dataStream.toByteArray();
     }
 
-    public static void readCardId() throws Exception {
+    public static String readCardId() throws Exception {
         CardChannel channel = connect();
         CommandAPDU select = selectAID(AID);
         ResponseAPDU resp = channel.transmit(select);
@@ -490,9 +541,7 @@ public class CardHelper {
         byte[] cardIdData = resp.getData();
         String cardId = new String(cardIdData, StandardCharsets.UTF_8);
         System.out.println("CardId: " + cardId);
-        String publicKey = DatabaseHelper.getUserPublicKey(cardId);
-        System.out.println("Public key: " + publicKey);
-        boolean isVerified = verifyCard(publicKey);
+        return cardId;
 
     }
 
@@ -527,34 +576,28 @@ public class CardHelper {
         return publicKey;
     }
 
-    public static boolean verifyCard( String publicKeyBase64) throws Exception {
+    public static boolean verifyCard(CardChannel channel, String publicKeyBase64) throws Exception {
 
-        CardChannel channel = connect();
-        CommandAPDU select = selectAID(AID);
-        ResponseAPDU resp = channel.transmit(select);
-        if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
-            throw new RuntimeException("unable to select the applet");
-        }
         byte[] pubKeyData = Base64.getDecoder().decode(publicKeyBase64);
         PublicKey publicKey = parsePublicKey(pubKeyData);
 
-        // Generate 32-byte random challenge
+
         SecureRandom random = new SecureRandom();
-        byte[] challenge = new byte[32];
+        byte[] challenge = new byte[16];
         random.nextBytes(challenge);
+
 
         System.out.println("Challenge: " + bytesToHex(challenge));
 
-        // Send challenge to card
-        byte[] command = new byte[37];
-        command[0] = (byte) 0x00;
-        command[1] = INS_VERIFY_CARD;
-        command[2] = (byte) 0x00;
-        command[3] = (byte) 0x00;
-        command[4] = (byte) 0x20;  // 32 bytes
-        System.arraycopy(challenge, 0, command, 5, 32);
+        CommandAPDU command = new CommandAPDU(
+                0x00,                    // CLA
+                INS_VERIFY_CARD,        // INS
+                0x00,                    // P1
+                0x00,                    // P2
+                challenge
+        );
 
-        ResponseAPDU response = channel.transmit(new CommandAPDU(command));
+        ResponseAPDU response = channel.transmit(command);
 
         if (response.getSW() != SUCCESS_SW) {
             throw new CardException(
@@ -563,6 +606,7 @@ public class CardHelper {
         }
 
         byte[] signature = response.getData();
+        System.out.println("Signature length: " + signature.length);
         System.out.println("Signature: " + bytesToHex(signature));
 
         // Verify signature with public key
