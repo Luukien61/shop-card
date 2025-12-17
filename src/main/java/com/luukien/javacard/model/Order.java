@@ -14,7 +14,7 @@ public class Order {
 
     private final Long id;
     private final String code;
-    private final Long userId;
+    private final String userPhone;
     private final BigDecimal totalPrice;
     private final LocalDateTime createAt;
 

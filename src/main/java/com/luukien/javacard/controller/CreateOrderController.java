@@ -1,6 +1,9 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.model.CartItem;
 import com.luukien.javacard.model.Product;
+import com.luukien.javacard.screen.SceneManager;
+import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.service.ProductService;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,7 +16,9 @@ import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 
 public class CreateOrderController {
     @FXML
@@ -308,14 +313,19 @@ public class CreateOrderController {
     }
 
     private void handlePayment() {
-        // Xử lý thanh toán
+
         if (cartItems.size() <= 1) { // Chỉ có placeholder
             showAlert("Giỏ hàng trống!");
             return;
         }
+        List<CartItem> validCartItems = cartItems.stream()
+                .filter(item -> !item.isPlaceholder())
+                .toList();
 
-
-        System.out.println("Thanh toán: " + totalPriceLabel.getText());
+        SceneManager.showModal(
+                Scenes.CONFIRM_ORDER_SCENE,
+                (ConfirmOrderController controller) -> controller.setOrderData(validCartItems)
+        );
     }
 
     private void handleCancel() {
@@ -338,39 +348,7 @@ public class CreateOrderController {
             anchor.requestFocus();
         }
     }
+
+
 }
 
-class CartItem {
-    @Setter
-    @Getter
-    private Product product;
-    @Setter
-    @Getter
-    private int quantity;
-    private boolean isPlaceholder = false;
-
-    public CartItem(Product product, int quantity) {
-        this.product = product;
-        this.quantity = quantity;
-    }
-
-    public boolean isPlaceholder() {
-        return isPlaceholder;
-    }
-
-    public void setPlaceholder(boolean placeholder) {
-        isPlaceholder = placeholder;
-    }
-
-    public BigDecimal getSubPrice() {
-        if (isPlaceholder || product.getPrice() == null) {
-            return BigDecimal.ZERO;
-        }
-        return product.getPrice().multiply(new BigDecimal(quantity));
-    }
-
-    public String getFormattedSubPrice() {
-        if (isPlaceholder) return "";
-        return String.format("%,.0f ₫", getSubPrice());
-    }
-}

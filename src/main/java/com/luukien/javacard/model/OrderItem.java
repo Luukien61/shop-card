@@ -1,6 +1,7 @@
 package com.luukien.javacard.model;
 
 import lombok.*;
+
 import java.math.BigDecimal;
 
 @Getter
@@ -10,12 +11,19 @@ import java.math.BigDecimal;
 @EqualsAndHashCode
 public class OrderItem {
 
-    private final Long id;
-    private final String orderCode;
-    private final String productCode;
-    private final String productName;
-    private final long quantity;
-    private final BigDecimal price;
+    private Long id;
+    private String orderCode;
+    private String productCode;
+    private String productName;
+    private int quantity;
+    private BigDecimal price;
+
+    public OrderItem(String productCode, String productName, int quantity, BigDecimal price) {
+        this.productCode = productCode;
+        this.productName = productName;
+        this.quantity = quantity;
+        this.price = price;
+    }
 
     public BigDecimal getSubTotal() {
         return price.multiply(BigDecimal.valueOf(quantity));

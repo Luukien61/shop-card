@@ -5,6 +5,7 @@ public class Scenes {
     public static final String ADD_PRODUCT_SCENE = "add-product-view.fxml";
     public static final String HOME_MANAGEMENT_SCENE = "home-management-view.fxml";
     public static final String CREATE_ORDER_SCENE = "create-order-view.fxml";
+    public static final String CONFIRM_ORDER_SCENE = "confirm-order-view.fxml";
     public static final String INITIAL_CARD_SCENE = "initiate-card-view.fxml";
     public static final String LOGIN_SCENE = "login-view.fxml";
     public static final String ORDERS_HISTORY_SCENE = "orders-history-view.fxml";
