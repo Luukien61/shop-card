@@ -9,20 +9,21 @@
 <?import javafx.scene.text.Font?>
 
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="650.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="650.0" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
+fx:controller="com.luukien.javacard.controller.CreateOrderController">
    <children>
-      <AnchorPane prefHeight="500.0" prefWidth="650.0" style="-fx-background-color: #FFFFFF;">
+      <AnchorPane fx:id="anchor" focusTraversable="true" onMouseClicked="#onAnchorClicked" prefHeight="500.0" prefWidth="650.0" style="-fx-background-color: #FFFFFF;">
          <children>
-            <TableView layoutX="1.0" prefHeight="313.0" prefWidth="650.0">
-              <columns>
-                  <TableColumn fx:id="colProductCode" prefWidth="88.66665649414062" text="Mã sản phẩm" />
-                <TableColumn fx:id="colProductName" prefWidth="166.0000228881836" text="Tên sản phẩm" />
-                <TableColumn fx:id="colQuantity" prefWidth="84.66668701171875" text="Số lượng" />
-                  <TableColumn prefWidth="112.66668701171875" text="Đơn giá" />
-                  <TableColumn fx:id="colSubPrice" prefWidth="134.66665649414062" text="Thành tiền" />
-                  <TableColumn fx:id="colDelete" prefWidth="252.0" />
-              </columns>
-            </TableView>
+             <TableView fx:id="tableView" layoutX="1.0" prefHeight="313.0" prefWidth="650.0">
+                 <columns>
+                     <TableColumn fx:id="colProductCode" prefWidth="88.66665649414062" text="Mã sản phẩm" />
+                     <TableColumn fx:id="colProductName" prefWidth="166.0000228881836" text="Tên sản phẩm" />
+                     <TableColumn fx:id="colQuantity" prefWidth="84.66668701171875" text="Số lượng" />
+                     <TableColumn fx:id="colUnitPrice" prefWidth="112.66668701171875" text="Đơn giá" />
+                     <TableColumn fx:id="colSubPrice" prefWidth="134.66665649414062" text="Thành tiền" />
+                     <TableColumn fx:id="colDelete" prefWidth="63.0" text="" />
+                 </columns>
+             </TableView>
             <Button fx:id="paymentBtn" layoutX="443.0" layoutY="402.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #0866FF;" text="Thanh toán" textFill="WHITE">
                <font>
                   <Font name="System Bold" size="14.0" />

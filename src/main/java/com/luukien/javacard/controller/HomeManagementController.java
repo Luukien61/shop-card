@@ -197,11 +197,7 @@ public class HomeManagementController {
             }
         });
         createOrderBtn.setOnAction(e-> {
-            try {
-                CardHelper.readData("123456");
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
+            SceneManager.switchTo(Scenes.CREATE_ORDER_SCENE);
         });
     }
 

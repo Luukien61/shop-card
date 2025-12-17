@@ -571,7 +571,7 @@ public class CardHelper {
         boolean isValid = verifier.verify(signature);
 
         System.out.println("Signature valid: " + isValid);
-        return false;
+        return isValid;
     }
 
     /**
