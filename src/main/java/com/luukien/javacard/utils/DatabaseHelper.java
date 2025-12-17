@@ -3,16 +3,15 @@ package com.luukien.javacard.utils;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.luukien.javacard.state.AppState;
 
-import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
 
 
 public class DatabaseHelper {
 
-    private static final String URL = "jdbc:postgresql://localhost:5432/smart_market";
+    private static final String URL = "jdbc:postgresql://localhost:5432/shop";
     private static final String USER = "postgres";
-    private static final String PASSWORD = "Dat27102003";
+    private static final String PASSWORD = "12345678";
 
     public static Connection getConnection() throws SQLException {
         try {
@@ -150,6 +149,31 @@ public class DatabaseHelper {
         }
     }
 
+    public static String getUserPublicKey(String cardId) {
+        String sql = """
+                SELECT public_key from users
+                where card_id = ?
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, cardId);
+
+            ResultSet resultSet = pstmt.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getString("public_key");
+            } else {
+                throw new RuntimeException("Unable to retrieve the public key");
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi thêm user vào DB: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
     public static int deleteIncompleteUser(String phone, String cardId) {
         if (cardId == null || cardId.isBlank() || phone == null || phone.isBlank()) {
             return 0;
@@ -169,103 +193,4 @@ public class DatabaseHelper {
             return 0;
         }
     }
-
-    public static boolean updateBalanceAndTier(String phone, BigDecimal amountToAdd) {
-        if (amountToAdd.compareTo(BigDecimal.ZERO) <= 0) {
-            return false; // Invalid amount
-        }
-
-        String sqlGet = "SELECT balance FROM users WHERE phone = ?";
-        String sqlUpdate = "UPDATE users SET balance = ?, member_tier = ? WHERE phone = ?";
-
-        try (Connection conn = getConnection()) {
-            // Get current balance
-            BigDecimal currentBalance;
-            try (PreparedStatement psGet = conn.prepareStatement(sqlGet)) {
-                psGet.setString(1, phone);
-                try (ResultSet rs = psGet.executeQuery()) {
-                    if (rs.next()) {
-                        currentBalance = rs.getBigDecimal("balance");
-                    } else {
-                        return false; // User not found
-                    }
-                }
-            }
-
-            BigDecimal newBalance = currentBalance.add(amountToAdd);
-
-            // Calculate new tier (ví dụ threshold, adjust theo quy định)
-            String newTier;
-            if (newBalance.compareTo(new BigDecimal("1000000")) < 0) {
-                newTier = "BRONZE";
-            } else if (newBalance.compareTo(new BigDecimal("5000000")) < 0) {
-                newTier = "SILVER";
-            } else {
-                newTier = "GOLD"; // Hoặc thêm PLATINUM, DIAMOND nếu cần
-            }
-
-            // Update DB
-            try (PreparedStatement psUpdate = conn.prepareStatement(sqlUpdate)) {
-                psUpdate.setBigDecimal(1, newBalance);
-                psUpdate.setString(2, newTier);
-                psUpdate.setString(3, phone);
-                int rows = psUpdate.executeUpdate();
-                return rows > 0;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public static BigDecimal getUserBalance(Long userId) {
-        String sql = "SELECT balance FROM users WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBigDecimal("balance");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return BigDecimal.ZERO;
-    }
-
-    public static boolean updateBalance(Long userId, BigDecimal delta) {
-        BigDecimal current = getUserBalance(userId);
-        BigDecimal newBalance = current.add(delta);
-        if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-            return false;
-        }
-
-        // Update tier dựa trên newBalance (adjust thresholds)
-        String newTier = calculateTier(newBalance);
-
-        String sql = "UPDATE users SET balance = ?, member_tier = ? WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBigDecimal(1, newBalance);
-            ps.setString(2, newTier);
-            ps.setLong(3, userId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private static String calculateTier(BigDecimal balance) {
-        if (balance.compareTo(new BigDecimal("1000000")) < 0) {
-            return "BRONZE";
-        } else if (balance.compareTo(new BigDecimal("5000000")) < 0) {
-            return "SILVER";
-        } else {
-            return "GOLD"; // Add more if needed
-        }
-    }
 }
-
-

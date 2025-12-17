@@ -193,7 +193,7 @@ public class InitiateCardController {
                     "Khởi tạo thẻ thành công!\n\nCard ID: " + finalCardId,
                     false
             );
-            SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+            //SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
         } else {
             ApplicationHelper.showAlert(
                     "Ghi thẻ thành công nhưng lưu CSDL thất bại!\n" +
