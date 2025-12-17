@@ -1,5 +1,6 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.dialog.TopupDialog;
 import com.luukien.javacard.dialog.UpdateCredentialDialog;
 import com.luukien.javacard.dialog.VerifyCredentialDialog;
 import com.luukien.javacard.exception.ApplicationException;
@@ -26,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 
@@ -118,24 +120,6 @@ public class UserInfoController {
     private String setupBalanceText() {
         BigDecimal balance = user.getBalance() != null ? user.getBalance() : BigDecimal.ZERO;
 
-        String tier = user.getMemberTier();
-
-        String tierColor = switch (tier.toUpperCase()) {
-            case "SILVER" -> "#94a3b8";
-            case "GOLD" -> "#f59e0b";
-            case "PLATINUM", "DIAMOND" -> "#e879f9";
-            case "BRONZE" -> "#c2410c";
-            default -> "#6b7280";
-        };
-
-        String tierDisplay = switch (tier.toUpperCase()) {
-            case "BRONZE" -> "Đồng";
-            case "SILVER" -> "Bạc";
-            case "GOLD" -> "Vàng";
-            case "PLATINUM" -> "Bạch Kim";
-            case "DIAMOND" -> "Kim Cương";
-            default -> tier;
-        };
 
         return String.format("%,.0f", balance);
     }
@@ -219,7 +203,20 @@ public class UserInfoController {
             );
         });
 
-        forgotPinBtn.setOnAction(e->onForgotPinBtnClick());
+        forgotPinBtn.setOnAction(e -> onForgotPinBtnClick());
+        topUpBtn.setOnAction(e -> {
+            TopupDialog.show().ifPresent(amount -> {
+                try {
+                    DatabaseHelper.updateUserBalance(user.getPhone(), amount);
+                    showAlert("Thành công", true);
+                    user = getDetailUser(user.getPhone());
+                    String htmlText = setupBalanceText();
+                    balanceLabel.setText(htmlText);
+                } catch (ApplicationException ex) {
+                    showAlert("Có lỗi xảy ra. Vui lòng thử lại sau", true);
+                }
+            });
+        });
 
 
     }

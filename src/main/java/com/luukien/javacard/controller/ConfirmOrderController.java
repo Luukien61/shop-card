@@ -319,15 +319,7 @@ public class ConfirmOrderController {
     }
 
     private void checkCardInsertState() {
-        Boolean isCardVerified = false;
-        try {
-            isCardVerified = orderService.isCardVerified();
-            if (!isCardVerified) {
-                errLabel.setText("Thẻ không xác minh!");
-            }
-        } catch (Exception e) {
-            errLabel.setText(e.getMessage());
-        }
+        boolean isCardVerified = true;
 
         noCardBox.setVisible(!isCardVerified);
         noCardBox.setManaged(!isCardVerified);

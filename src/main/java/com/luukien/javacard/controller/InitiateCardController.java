@@ -78,6 +78,11 @@ public class InitiateCardController {
         String phone = phoneField.getText();
         String address = addressField.getText();
 
+        if (phone.length() < 10 || phone.length() > 12) {
+            showAlert("Số điện thoại không đúng định dạng", true);
+            return;
+        }
+
 
         String genderSelected = menGender.isSelected() ? "Nam" : womenGender.isSelected() ? "Nữ" : "";
 
@@ -126,24 +131,17 @@ public class InitiateCardController {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             ApplicationHelper.updateProgress("Đang ghi thẻ (lần " + attempt + "/" + MAX_ATTEMPTS + ")...");
 
-            String[] genResult = CardHelper.initiateKeyAndCardId();
-            if (genResult == null || genResult.length != 2) {
-                CardHelper.clearCardData();
-                continue;
-            }
-
-            finalPublicKey = genResult[0];
-            finalCardId = genResult[1];
+            finalCardId = CardHelper.generate16Digits(phone);
 
 
-            Boolean writeSuccess = CardHelper.initiateCard(
+            finalPublicKey = CardHelper.initiateCard(
                     username, address, phone,
                     userPin, adminPin,
                     selectedImageFile,
                     finalCardId
             );
 
-            if (writeSuccess) {
+            if (finalPublicKey != null) {
                 cardInitialized = true;
                 break;
             } else {
@@ -193,7 +191,7 @@ public class InitiateCardController {
                     "Khởi tạo thẻ thành công!\n\nCard ID: " + finalCardId,
                     false
             );
-            //SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+            SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
         } else {
             ApplicationHelper.showAlert(
                     "Ghi thẻ thành công nhưng lưu CSDL thất bại!\n" +
@@ -202,6 +200,7 @@ public class InitiateCardController {
                             "Vui lòng báo admin để xử lý dữ liệu CSDL.",
                     true
             );
+            CardHelper.clearCardData();
             SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
         }
     }

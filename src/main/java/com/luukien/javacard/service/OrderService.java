@@ -21,10 +21,6 @@ public class OrderService {
     private static final OrderService instance = new OrderService();
 
 
-    public Boolean isCardVerified() throws Exception {
-        return CardHelper.isCardVerified();
-    }
-
     public UserCardInfo getUserCardInfo(String pin) throws Exception {
         return CardHelper.getUserCardInfo(pin);
     }
