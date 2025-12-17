@@ -8,6 +8,7 @@ public class Scenes {
     public static final String CONFIRM_ORDER_SCENE = "confirm-order-view.fxml";
     public static final String INITIAL_CARD_SCENE = "initiate-card-view.fxml";
     public static final String LOGIN_SCENE = "login-view.fxml";
+    public static final String ORDER_DETAIL_SCENE = "order-detail-view.fxml";
     public static final String ORDERS_HISTORY_SCENE = "orders-history-view.fxml";
     public static final String ORDERS_MANAGEMENT_SCENE = "orders-management.fxml";
     public static final String PRODUCTS_SCENE = "products-view.fxml";

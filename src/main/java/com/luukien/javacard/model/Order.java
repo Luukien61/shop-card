@@ -1,6 +1,7 @@
 package com.luukien.javacard.model;
 
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -10,13 +11,15 @@ import java.time.format.DateTimeFormatter;
 @Builder
 @ToString
 @EqualsAndHashCode
+@Setter
+@NoArgsConstructor
 public class Order {
 
-    private final Long id;
-    private final String code;
-    private final String userPhone;
-    private final BigDecimal totalPrice;
-    private final LocalDateTime createAt;
+    private Long id;
+    private String code;
+    private String userPhone;
+    private BigDecimal totalPrice;
+    private LocalDateTime createAt;
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");

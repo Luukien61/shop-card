@@ -3,6 +3,8 @@ package com.luukien.javacard.controller;
 import com.luukien.javacard.dialog.VerifyCredentialDialog;
 import com.luukien.javacard.exception.OrderException;
 import com.luukien.javacard.model.*;
+import com.luukien.javacard.screen.SceneManager;
+import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.service.OrderService;
 import com.luukien.javacard.utils.CardHelper;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -14,15 +16,12 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 
 import javax.smartcardio.CardException;
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.List;
-
-import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 
 public class ConfirmOrderController {
     @FXML
@@ -250,9 +249,8 @@ public class ConfirmOrderController {
      * Xử lý nút quay lại
      */
     private void handleBack() {
-        // Đóng cửa sổ hiện tại
-        Stage stage = (Stage) backBtn.getScene().getWindow();
-        stage.close();
+
+        SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
     }
 
     /**
@@ -284,7 +282,7 @@ public class ConfirmOrderController {
      * Xử lý tạo đơn hàng
      */
     private void processOrder() {
-        try{
+        try {
             orderService.createOrder(userCardInfo.getPhone(), orderItems);
             System.out.println("=== Thông tin đơn hàng ===");
             System.out.println("Khách hàng: " + userCardInfo.getUserName());
@@ -306,13 +304,10 @@ public class ConfirmOrderController {
 
             showAlert("Thành công!", "Đơn hàng đã được tạo thành công!");
 
-            // Đóng cửa sổ
             handleBack();
         } catch (OrderException e) {
             showAlert("Lỗi", e.getMessage());
         }
-
-
     }
 
     private void showAlert(String title, String message) {
@@ -340,7 +335,6 @@ public class ConfirmOrderController {
         cardInsertedBox.setVisible(isCardVerified);
         cardInsertedBox.setManaged(isCardVerified);
 
-        // userInfoBox sẽ được hiển thị sau khi nhập PIN thành công
         userInfoBox.setVisible(false);
         userInfoBox.setManaged(false);
     }

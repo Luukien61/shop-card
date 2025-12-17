@@ -1,20 +1,17 @@
 package com.luukien.javacard.controller;
 
 import com.luukien.javacard.dialog.UpdateCredentialDialog;
-import com.luukien.javacard.model.Product;
-import com.luukien.javacard.model.SecretType;
-import com.luukien.javacard.model.User;
-import com.luukien.javacard.model.UserRole;
+import com.luukien.javacard.dialog.VerifyCredentialDialog;
+import com.luukien.javacard.model.*;
 import com.luukien.javacard.screen.SceneManager;
 import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.service.AccountService;
+import com.luukien.javacard.service.OrderService;
 import com.luukien.javacard.service.ProductService;
 import com.luukien.javacard.service.UserService;
 import com.luukien.javacard.state.AppState;
 import com.luukien.javacard.utils.ApplicationHelper;
 import com.luukien.javacard.utils.Argon2KeyDerivation;
-import com.luukien.javacard.dialog.VerifyCredentialDialog;
-import com.luukien.javacard.utils.CardHelper;
 import com.luukien.javacard.utils.DateConverter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,7 +20,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
-import javax.smartcardio.CardException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.luukien.javacard.utils.EmailHelper.generateOTP;
@@ -54,13 +54,13 @@ public class HomeManagementController {
     @FXML
     private DatePicker orderdatePicker;
     @FXML
-    private TableView orderTable;
+    private TableView<Order> orderTable;
     @FXML
     private TableColumn colOrderIndex;
     @FXML
-    private TableColumn colOrderId;
+    private TableColumn<Order, String> colOrderId;
     @FXML
-    private TableColumn colUserId;
+    private TableColumn<Order, String> colUserPhone;
     @FXML
     private TableColumn colTotalPrice;
     @FXML
@@ -69,6 +69,9 @@ public class HomeManagementController {
     private TableColumn colDetail;
     @FXML
     private Button filterOrderBtn;
+    private final ObservableList<Order> orderData = FXCollections.observableArrayList();
+
+
     @FXML
     private TableView<Product> productTable;
     @FXML
@@ -121,6 +124,7 @@ public class HomeManagementController {
 
     private final ProductService productService = ProductService.getInstance();
     private final UserService userService = UserService.getInstance();
+    private final OrderService orderService = OrderService.getInstance();
 
     @FXML
     public void initialize() {
@@ -135,6 +139,7 @@ public class HomeManagementController {
         }
         addNewProductBtn.setOnAction(e -> onNewProductBtnClick());
         addNewUserBtn.setOnAction(e -> onNewUserBtnClick());
+        handleOrderTabSelected();
 
         initializeProductTab();
         initializeOrderTab();
@@ -191,15 +196,94 @@ public class HomeManagementController {
     }
 
     private void initializeOrderTab() {
-        orderPaneTab.setOnSelectionChanged(event -> {
-            if (orderPaneTab.isSelected()) {
 
+        // ===== STT (index, không phụ thuộc order) =====
+        colOrderIndex.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Object item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setText(null);
+                } else {
+                    setText(String.valueOf(getIndex() + 1));
+                }
             }
         });
-        createOrderBtn.setOnAction(e-> {
-            SceneManager.switchTo(Scenes.CREATE_ORDER_SCENE);
+
+        // ===== Order code =====
+        colOrderId.setCellValueFactory(
+                new PropertyValueFactory<>("code")
+        );
+
+        // ===== User phone =====
+        colUserPhone.setCellValueFactory(
+                new PropertyValueFactory<>("userPhone")
+        );
+
+        // ===== Total price =====
+        colTotalPrice.setCellValueFactory(
+                new PropertyValueFactory<>("totalPrice")
+        );
+        colTotalPrice.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Object item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    BigDecimal price = (BigDecimal) item;
+                    setText(String.format("%,.0f ₫", price));
+                }
+            }
         });
+
+        // ===== Create time =====
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        colTime.setCellValueFactory(
+                new PropertyValueFactory<>("createAt")
+        );
+        colTime.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Object item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    LocalDateTime time = (LocalDateTime) item;
+                    setText(time.format(formatter));
+                }
+            }
+        });
+
+
+        colDetail.setCellFactory(col -> new TableCell<>() {
+            private final Button btn = new Button("Chi tiết");
+
+            {
+                btn.setStyle("-fx-background-color: #0866FF; -fx-text-fill: white;");
+                btn.setOnAction(e -> {
+                    Order order = (Order) getTableView().getItems().get(getIndex());
+                    SceneManager.showModal(Scenes.ORDER_DETAIL_SCENE,
+                            (OrderDetailController controller) -> controller.setUp(order));
+                });
+            }
+
+            @Override
+            protected void updateItem(Object item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(btn);
+                }
+            }
+        });
+
+        orderTable.setItems(orderData);
     }
+
 
     private void initializeUserTab() {
         userTable.setItems(userData);
@@ -263,6 +347,11 @@ public class HomeManagementController {
         }
     }
 
+    private void handleOrderTabSelected() {
+        List<Order> items = orderService.loadOrder();
+        orderData.setAll(items);
+    }
+
     private void filterProductByNameOrCode() {
         String filter = productFilterTextField.getText().trim();
         if (filter.isBlank()) {
@@ -275,6 +364,28 @@ public class HomeManagementController {
             }
         }
     }
+
+    @FXML
+    private void onFilterOrder() {
+
+        LocalDate selectedDate = orderdatePicker.getValue();
+
+        if (selectedDate == null) {
+            onResetFilter();
+            return;
+        }
+
+        List<Order> filteredOrders =
+                orderService.loadOrdersByDate(selectedDate);
+
+        orderData.setAll(filteredOrders);
+    }
+
+    private void onResetFilter() {
+        orderData.setAll(orderService.loadOrder());
+        orderdatePicker.setValue(null);
+    }
+
 
     private void initializeAccountTab() {
         boolean isAdmin = AppState.getInstance().isAdminMode();
