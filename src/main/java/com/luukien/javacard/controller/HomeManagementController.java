@@ -197,7 +197,6 @@ public class HomeManagementController {
 
     private void initializeOrderTab() {
 
-        // ===== STT (index, không phụ thuộc order) =====
         colOrderIndex.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Object item, boolean empty) {
@@ -210,17 +209,16 @@ public class HomeManagementController {
             }
         });
 
-        // ===== Order code =====
+
         colOrderId.setCellValueFactory(
                 new PropertyValueFactory<>("code")
         );
 
-        // ===== User phone =====
         colUserPhone.setCellValueFactory(
                 new PropertyValueFactory<>("userPhone")
         );
 
-        // ===== Total price =====
+
         colTotalPrice.setCellValueFactory(
                 new PropertyValueFactory<>("totalPrice")
         );
@@ -237,7 +235,7 @@ public class HomeManagementController {
             }
         });
 
-        // ===== Create time =====
+
         DateTimeFormatter formatter =
                 DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -281,7 +279,16 @@ public class HomeManagementController {
             }
         });
 
+        orderPaneTab.setOnSelectionChanged(event -> {
+            if (orderPaneTab.isSelected()) {
+                handleOrderTabSelected();
+            }
+        });
+
         orderTable.setItems(orderData);
+        createOrderBtn.setOnAction(e-> {
+            SceneManager.switchTo(Scenes.CREATE_ORDER_SCENE);
+        });
     }
 
 

@@ -16,6 +16,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 import javax.smartcardio.CardException;
 import java.io.ByteArrayInputStream;
@@ -250,7 +251,8 @@ public class ConfirmOrderController {
      */
     private void handleBack() {
 
-        SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+        Stage stage = (Stage) backBtn.getScene().getWindow();
+        stage.close();
     }
 
     /**
