@@ -1,5 +1,6 @@
 package com.luukien.javacard.utils;
 
+import com.luukien.javacard.exception.ApplicationException;
 import com.luukien.javacard.model.UserCardInfo;
 
 import javax.imageio.IIOImage;
@@ -39,6 +40,7 @@ public class CardHelper {
     public static final byte INS_READ_AVATAR = (byte) 0x54;
     public static final byte INS_READ_CARD_ID = (byte) 0x53;
     public static final byte INS_VERIFY_CARD = (byte) 0x11;
+    public static final byte INS_RECOVER_WITH_ADMIN = (byte) 0x21;
 
 
     public static final String SUCCESS_RESPONSE = "9000";
@@ -260,7 +262,7 @@ public class CardHelper {
 
     private static byte[] setPinDataWithTimestamp(String currentPin, String newPin) {
 
-        byte[] data = new byte[16];
+        byte[] data = new byte[12];
         System.arraycopy(currentPin.getBytes(), 0, data, 0, 6);
         System.arraycopy(newPin.getBytes(), 0, data, 6, 6);
 
@@ -299,7 +301,34 @@ public class CardHelper {
         );
 
         resp = channel.transmit(apdu);
-        return  resp.getSW() == SUCCESS_SW;
+        return resp.getSW() == SUCCESS_SW;
+    }
+
+    public static void recoverUserPinWithAdmin(String adminPin, String newUserPin) throws ApplicationException, CardException {
+        if (newUserPin.length() != 6 || !newUserPin.matches("\\d{6}")) {
+            throw new ApplicationException("Pin không đúng định dạng");
+        }
+        CardChannel channel = connect();
+        CommandAPDU select = selectAID(AID);
+        ResponseAPDU resp = channel.transmit(select);
+        if (resp.getSW() != SUCCESS_SW) {
+            throw new ApplicationException("unable to select the applet");
+        }
+        byte[] data = new byte[12];
+        System.arraycopy(adminPin.getBytes(), 0, data, 0, 6);
+        System.arraycopy(newUserPin.getBytes(), 0, data, 6, 6);
+        CommandAPDU cmd = new CommandAPDU(
+                0x00,
+                INS_RECOVER_WITH_ADMIN,
+                0x00, 0x00,
+                data
+        );
+
+        ResponseAPDU result = channel.transmit(cmd);
+        if (result.getSW() != SUCCESS_SW){
+            throw new ApplicationException("Có lỗi xảy ra. Vui lòng thử lại sau");
+        }
+
     }
 
 

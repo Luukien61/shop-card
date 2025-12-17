@@ -1,10 +1,8 @@
 package com.luukien.javacard.controller;
 
 import com.luukien.javacard.dialog.VerifyCredentialDialog;
-import com.luukien.javacard.exception.OrderException;
+import com.luukien.javacard.exception.ApplicationException;
 import com.luukien.javacard.model.*;
-import com.luukien.javacard.screen.SceneManager;
-import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.service.OrderService;
 import com.luukien.javacard.utils.CardHelper;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -307,7 +305,7 @@ public class ConfirmOrderController {
             showAlert("Thành công!", "Đơn hàng đã được tạo thành công!");
 
             handleBack();
-        } catch (OrderException e) {
+        } catch (ApplicationException e) {
             showAlert("Lỗi", e.getMessage());
         }
     }

@@ -15,8 +15,9 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="500.0" prefWidth="650.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.UserInfoController">
+<AnchorPane prefHeight="550.0" prefWidth="650.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.UserInfoController">
     <children>
+        <!-- Header -->
         <Label layoutX="26.0" layoutY="66.0" prefHeight="32.0" prefWidth="597.0" style="-fx-background-color: #0866FF; -fx-background-radius: 8;" text="Thông tin người dùng" textFill="WHITE">
             <font>
                 <Font name="System Bold" size="14.0" />
@@ -25,9 +26,11 @@
                 <Insets left="16.0" />
             </padding>
         </Label>
-        <GridPane layoutX="26.0" layoutY="111.0" prefHeight="330.0" prefWidth="413.0" style="-fx-border-color: #ff0000; -fx-border-radius: 16;">
+
+        <!-- Form thông tin -->
+        <GridPane layoutX="26.0" layoutY="111.0" prefHeight="330.0" prefWidth="413.0" style="-fx-border-color: #CCCCCC; -fx-border-radius: 8; -fx-border-width: 1;">
             <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="183.6666717529297" minWidth="10.0" prefWidth="98.99998474121095" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="183.6666717529297" minWidth="10.0" prefWidth="110.0" />
                 <ColumnConstraints hgrow="SOMETIMES" maxWidth="279.00001525878906" minWidth="10.0" prefWidth="279.00001525878906" />
             </columnConstraints>
             <rowConstraints>
@@ -82,9 +85,9 @@
                             <font>
                                 <Font size="14.0" />
                             </font>
-                     <toggleGroup>
-                        <ToggleGroup fx:id="gender" />
-                     </toggleGroup>
+                            <toggleGroup>
+                                <ToggleGroup fx:id="gender" />
+                            </toggleGroup>
                         </RadioButton>
                         <RadioButton fx:id="womenGenderBtn" disable="true" mnemonicParsing="false" text="Nữ" toggleGroup="$gender">
                             <font>
@@ -93,45 +96,89 @@
                         </RadioButton>
                     </children>
                 </HBox>
-                <Label text="Số dư" GridPane.rowIndex="6" />
+                <Label text="Số dư" GridPane.rowIndex="6">
+                    <font>
+                        <Font size="14.0" />
+                    </font>
+                </Label>
                 <Label fx:id="balanceLabel" text="10000 (Bzone)" GridPane.columnIndex="1" GridPane.rowIndex="6">
                     <font>
                         <Font name="System Bold" size="14.0" />
                     </font>
                 </Label>
-                <Label text="PIN" GridPane.rowIndex="7" />
-                <Label text="******" GridPane.columnIndex="1" GridPane.rowIndex="7">
+                <Label text="PIN" GridPane.rowIndex="7">
                     <font>
                         <Font size="14.0" />
                     </font>
                 </Label>
-                <Button fx:id="changePinBtn" mnemonicParsing="false" style="-fx-background-color: #0866FF;" text="Thay đổi" textFill="WHITE" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="7">
-                    <GridPane.margin>
-                        <Insets bottom="8.0" right="16.0" />
-                    </GridPane.margin>
-                </Button>
+                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="7">
+                    <children>
+                        <Label text="******">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Label>
+                        <Button fx:id="changePinBtn" mnemonicParsing="false" style="-fx-background-color: #0866FF;" text="Thay đổi" textFill="WHITE">
+                            <font>
+                                <Font size="13.0" />
+                            </font>
+                        </Button>
+                        <Button fx:id="forgotPinBtn" mnemonicParsing="false" style="-fx-background-color: #FF6B35;" text="Quên mã" textFill="WHITE">
+                            <font>
+                                <Font size="13.0" />
+                            </font>
+                        </Button>
+                    </children>
+                </HBox>
             </children>
             <padding>
                 <Insets bottom="8.0" left="16.0" right="16.0" top="16.0" />
             </padding>
         </GridPane>
+
+        <!-- Ảnh đại diện -->
         <ImageView fx:id="imgView" fitHeight="187.0" fitWidth="140.0" layoutX="468.0" layoutY="127.0" pickOnBounds="true" preserveRatio="true" />
-        <Button fx:id="pickImgBtn" disable="true" layoutX="527.0" layoutY="359.0" mnemonicParsing="false" prefHeight="29.0" prefWidth="82.0" text="Chọn ảnh" visible="false">
+        <Button fx:id="pickImgBtn" disable="true" layoutX="489.0" layoutY="325.0" mnemonicParsing="false" prefHeight="29.0" prefWidth="100.0" text="Chọn ảnh" visible="false">
             <font>
                 <Font size="14.0" />
             </font>
         </Button>
-        <Button fx:id="updateBtn" layoutX="286.0" layoutY="461.0" mnemonicParsing="false" style="-fx-background-color: #0866FF;" text="Cập nhật" textFill="WHITE">
+
+        <!-- Các nút chức năng chính -->
+        <HBox alignment="CENTER" layoutX="165.0" layoutY="460.0" spacing="16.0">
+            <children>
+                <Button fx:id="topUpBtn" mnemonicParsing="false" prefHeight="35.0" prefWidth="120.0" style="-fx-background-color: #28A745;" text="Nạp tiền" textFill="WHITE">
+                    <font>
+                        <Font name="System Bold" size="14.0" />
+                    </font>
+                </Button>
+                <Button fx:id="updateBtn" mnemonicParsing="false" prefHeight="35.0" prefWidth="120.0" style="-fx-background-color: #0866FF;" text="Cập nhật" textFill="WHITE">
+                    <font>
+                        <Font name="System Bold" size="14.0" />
+                    </font>
+                </Button>
+            </children>
+        </HBox>
+
+        <!-- Nút unlock (chỉ hiện khi có điều kiện) -->
+        <Button fx:id="unlockBtn" layoutX="550.0" layoutY="460.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="73.0" style="-fx-background-color: #DC3545;" text="Unlock" textFill="WHITE" visible="false">
             <font>
                 <Font name="System Bold" size="14.0" />
             </font>
         </Button>
-        <Label layoutX="53.0" layoutY="441.0" text="Tài khoản đã bị khoá." visible="false">
+
+        <!-- Thông báo tài khoản bị khóa -->
+        <Label layoutX="200.0" layoutY="510.0" text="Tài khoản đã bị khoá." textFill="#DC3545" visible="false">
+            <font>
+                <Font name="System Bold" size="14.0" />
+            </font>
+        </Label>
+
+        <!-- Nút quay lại -->
+        <Button fx:id="backButton" layoutX="26.0" layoutY="25.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="90.0" style="-fx-background-color: #6C757D;" text="Quay lại" textFill="WHITE">
             <font>
                 <Font size="14.0" />
             </font>
-        </Label>
-        <Button fx:id="unlockBtn" layoutX="568.0" layoutY="25.0" mnemonicParsing="false" style="-fx-background-color: #ff0000;" text="Unlock" textFill="WHITE" />
-        <Button fx:id="backButton" layoutX="26.0" layoutY="25.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Quay lại" />
+        </Button>
     </children>
 </AnchorPane>

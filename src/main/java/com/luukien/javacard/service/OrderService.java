@@ -1,6 +1,6 @@
 package com.luukien.javacard.service;
 
-import com.luukien.javacard.exception.OrderException;
+import com.luukien.javacard.exception.ApplicationException;
 import com.luukien.javacard.model.Order;
 import com.luukien.javacard.model.OrderItem;
 import com.luukien.javacard.model.UserCardInfo;
@@ -146,7 +146,7 @@ public class OrderService {
 
 
 
-    public void createOrder(String phone, List<OrderItem> items) throws OrderException {
+    public void createOrder(String phone, List<OrderItem> items) throws ApplicationException {
 
         String selectUserSql =
                 "SELECT balance FROM users WHERE phone = ? FOR UPDATE";
@@ -175,7 +175,7 @@ public class OrderService {
                 ResultSet rs = ps.executeQuery();
 
                 if (!rs.next()) {
-                    throw new OrderException("Không tìm thấy người dùng");
+                    throw new ApplicationException("Không tìm thấy người dùng");
                 }
 
                 userBalance = rs.getBigDecimal("balance");
@@ -191,11 +191,11 @@ public class OrderService {
             }
 
             if (totalPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new OrderException("Giỏ hàng không hợp lệ");
+                throw new ApplicationException("Giỏ hàng không hợp lệ");
             }
 
             if (userBalance.compareTo(totalPrice) < 0) {
-                throw new OrderException("Số dư không đủ để thanh toán");
+                throw new ApplicationException("Số dư không đủ để thanh toán");
             }
 
 
@@ -220,7 +220,7 @@ public class OrderService {
                     psUpdate.setInt(3, item.getQuantity());
 
                     if (psUpdate.executeUpdate() == 0) {
-                        throw new OrderException(
+                        throw new ApplicationException(
                                 "Sản phẩm \"" + item.getProductName() + "\" không đủ tồn kho"
                         );
                     }
@@ -244,14 +244,14 @@ public class OrderService {
 
             conn.commit();
 
-        } catch (OrderException e) {
+        } catch (ApplicationException e) {
             rollback(conn);
             throw e;
 
         } catch (Exception e) {
             rollback(conn);
             e.printStackTrace();
-            throw new OrderException("Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại");
+            throw new ApplicationException("Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại");
 
         } finally {
             close(conn);

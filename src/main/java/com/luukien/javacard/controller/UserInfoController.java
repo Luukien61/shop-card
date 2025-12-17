@@ -2,6 +2,7 @@ package com.luukien.javacard.controller;
 
 import com.luukien.javacard.dialog.UpdateCredentialDialog;
 import com.luukien.javacard.dialog.VerifyCredentialDialog;
+import com.luukien.javacard.exception.ApplicationException;
 import com.luukien.javacard.model.SecretType;
 import com.luukien.javacard.model.User;
 import com.luukien.javacard.screen.SceneManager;
@@ -18,6 +19,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
+import javax.smartcardio.CardException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,8 +27,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 
+import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
+
 public class UserInfoController {
 
+    @FXML
+    private Button topUpBtn;
+    @FXML
+    private Button forgotPinBtn;
     @FXML
     private TextField cardIdTextField;
     @FXML
@@ -189,28 +197,51 @@ public class UserInfoController {
     private void updateButtonStates() {
         boolean isAdmin = AppState.getInstance().isAdminMode();
         String currentEmail = AppState.getInstance().getCurrentUserEmail();
-        unlockBtn.setVisible(isAdmin);
-        unlockBtn.setManaged(isAdmin);
-        unlockBtn.setDisable(!isAdmin);
+        unlockBtn.setVisible(!isAdmin);
+        unlockBtn.setManaged(!isAdmin);
+        unlockBtn.setDisable(isAdmin);
         changePinBtn.setVisible(isAdmin);
         changePinBtn.setManaged(isAdmin);
         changePinBtn.setDisable(!isAdmin);
-        changePinBtn.setOnAction(e -> VerifyCredentialDialog.show(
-                SecretType.PASSWORD,
-                null,
-                5,
-                (password) -> AccountService.verifyPassword(password, currentEmail),
-                (ignore) -> UpdateCredentialDialog.show(
-                        SecretType.PIN,
-                        null,
-                        null,
-                        CardHelper::changeUserPin
-                ),
-                null
-        ));
+        changePinBtn.setOnAction(e -> {
+            VerifyCredentialDialog.show(
+                    SecretType.PIN,
+                    "Xác thực PIN Admin",
+                    5,
+                    DatabaseHelper::verifySysUserPin,
+                    (adminPin) -> UpdateCredentialDialog.show(
+                            SecretType.PIN,
+                            null,
+                            null,
+                            CardHelper::changeUserPin
+                    ),
+                    () -> showAlert("Thẻ bị khóa tạm thời!", true)
+            );
+        });
 
-       // backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
+        forgotPinBtn.setOnAction(e->onForgotPinBtnClick());
+
+
     }
 
-
+    private void onForgotPinBtnClick() {
+        ApplicationHelper
+                .showPinDialog("Khởi tạo PIN", "Nhập PIN mới cho tài khoản").ifPresent(userPin -> {
+                    VerifyCredentialDialog.show(
+                            SecretType.PIN,
+                            "Xác thực PIN Admin",
+                            5,
+                            DatabaseHelper::verifySysUserPin,
+                            (adminPin) -> {
+                                try {
+                                    CardHelper.recoverUserPinWithAdmin(adminPin, userPin);
+                                    showAlert("Thành công", true);
+                                } catch (ApplicationException | CardException e) {
+                                    showAlert(e.getMessage(), true);
+                                }
+                            },
+                            () -> showAlert("Lỗi", true)
+                    );
+                });
+    }
 }

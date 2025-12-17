@@ -21,6 +21,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class CreateOrderController {
+
+    @FXML
+    private Button backButton;
     @FXML
     private AnchorPane anchor;
 
@@ -250,6 +253,7 @@ public class CreateOrderController {
         // Xử lý các button
         paymentBtn.setOnAction(e -> handlePayment());
         cancelBtn.setOnAction(e -> handleCancel());
+        backButton.setOnAction(e-> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
     }
 
     private void showProductSelectionDialog() {
