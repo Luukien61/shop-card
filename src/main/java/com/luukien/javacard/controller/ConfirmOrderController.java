@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -23,6 +24,10 @@ import java.util.Base64;
 import java.util.List;
 
 public class ConfirmOrderController {
+    @FXML
+    private HBox verifiedBox;
+    @FXML
+    private HBox notVerifiedBox;
     @FXML
     private Label errLabel;
     @FXML
@@ -115,6 +120,16 @@ public class ConfirmOrderController {
     }
 
     private void onPinRequest() {
+        try{
+            boolean isCardLocked = CardHelper.getLockStatus();
+            if(isCardLocked){
+                showAlert("Khóa thẻ", "Thẻ bị khóa");
+                return;
+            }
+        } catch (CardException e) {
+            showAlert("Có lỗi xảy ra", "Có lỗi xảy ra khi đọc thẻ!");
+            return;
+        }
         VerifyCredentialDialog.show(
                 SecretType.PIN,
                 "Xác thực PIN người dùng",
@@ -130,7 +145,6 @@ public class ConfirmOrderController {
                 (userPin) -> {
                     try {
                         userCardInfo = orderService.getUserCardInfo(userPin);
-                        // Hiển thị thông tin người dùng sau khi xác thực thành công
                         displayUserInfo();
                     } catch (Exception e) {
                         showAlert("Lỗi", e.getMessage());
@@ -197,6 +211,11 @@ public class ConfirmOrderController {
             }
         }
 
+        Boolean isCardVerified = userCardInfo.getIsCardVerified();
+        verifiedBox.setVisible(isCardVerified);
+        verifiedBox.setManaged(isCardVerified);
+        notVerifiedBox.setVisible(!isCardVerified);
+        notVerifiedBox.setManaged(!isCardVerified);
     }
 
     /**

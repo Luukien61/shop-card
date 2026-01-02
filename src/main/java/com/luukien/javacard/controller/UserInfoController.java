@@ -19,6 +19,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.stage.Stage;
 
 import javax.smartcardio.CardException;
 import java.math.BigDecimal;
@@ -115,6 +116,11 @@ public class UserInfoController {
 
         loadUserImage(user.getImage());
         updateButtonStates();
+        backButton.setOnAction(e -> {
+            Stage stage = (Stage) backButton.getScene().getWindow();
+            stage.close();
+
+        });
     }
 
     private String setupBalanceText() {
@@ -180,28 +186,51 @@ public class UserInfoController {
 
     private void updateButtonStates() {
         boolean isAdmin = AppState.getInstance().isAdminMode();
-        String currentEmail = AppState.getInstance().getCurrentUserEmail();
-        unlockBtn.setVisible(!isAdmin);
-        unlockBtn.setManaged(!isAdmin);
-        unlockBtn.setDisable(isAdmin);
+        boolean isCardLocked = false;
+        try {
+            isCardLocked = CardHelper.getLockStatus();
+        } catch (CardException e) {
+            showAlert("Không đọc được thẻ", true);
+        }
+
+        unlockBtn.setVisible(isAdmin && isCardLocked);
+        unlockBtn.setManaged(isAdmin && isCardLocked);
+        unlockBtn.setDisable(!isAdmin || !isCardLocked);
+        unlockBtn.setOnAction(e -> VerifyCredentialDialog.show(
+                SecretType.PIN,
+                "Xác thực PIN Admin",
+                5,
+                DatabaseHelper::verifySysUserPin,
+                (adminPin) -> {
+                    try {
+                        CardHelper.unlockCard(adminPin);
+                        showAlert("Mở khoá thành công", true);
+                        unlockBtn.setVisible(false);
+                        unlockBtn.setManaged(false);
+                        unlockBtn.setDisable(true);
+                    } catch (CardException ex) {
+                        showAlert("Không đọc được thẻ", true);
+                    }
+                },
+                () -> showAlert("Thẻ bị khóa tạm thời!", true)
+        ));
+
         changePinBtn.setVisible(isAdmin);
         changePinBtn.setManaged(isAdmin);
         changePinBtn.setDisable(!isAdmin);
-        changePinBtn.setOnAction(e -> {
-            VerifyCredentialDialog.show(
-                    SecretType.PIN,
-                    "Xác thực PIN Admin",
-                    5,
-                    DatabaseHelper::verifySysUserPin,
-                    (adminPin) -> UpdateCredentialDialog.show(
-                            SecretType.PIN,
-                            null,
-                            null,
-                            CardHelper::changeUserPin
-                    ),
-                    () -> showAlert("Thẻ bị khóa tạm thời!", true)
-            );
-        });
+        changePinBtn.setOnAction(e -> VerifyCredentialDialog.show(
+                SecretType.PIN,
+                "Xác thực PIN Admin",
+                5,
+                DatabaseHelper::verifySysUserPin,
+                (adminPin) -> UpdateCredentialDialog.show(
+                        SecretType.PIN,
+                        null,
+                        null,
+                        CardHelper::changeUserPin
+                ),
+                () -> showAlert("Thẻ bị khóa tạm thời!", true)
+        ));
 
         forgotPinBtn.setOnAction(e -> onForgotPinBtnClick());
         topUpBtn.setOnAction(e -> {
@@ -223,22 +252,24 @@ public class UserInfoController {
 
     private void onForgotPinBtnClick() {
         ApplicationHelper
-                .showPinDialog("Khởi tạo PIN", "Nhập PIN mới cho tài khoản").ifPresent(userPin -> {
-                    VerifyCredentialDialog.show(
-                            SecretType.PIN,
-                            "Xác thực PIN Admin",
-                            5,
-                            DatabaseHelper::verifySysUserPin,
-                            (adminPin) -> {
-                                try {
-                                    CardHelper.recoverUserPinWithAdmin(adminPin, userPin);
-                                    showAlert("Thành công", true);
-                                } catch (ApplicationException | CardException e) {
-                                    showAlert(e.getMessage(), true);
-                                }
-                            },
-                            () -> showAlert("Lỗi", true)
-                    );
-                });
+                .showPinDialog("Khởi tạo PIN", "Nhập PIN mới cho tài khoản").ifPresent(userPin -> VerifyCredentialDialog.show(
+                        SecretType.PIN,
+                        "Xác thực PIN Admin",
+                        5,
+                        DatabaseHelper::verifySysUserPin,
+                        (adminPin) -> {
+                            try {
+                                CardHelper.recoverUserPinWithAdmin(adminPin, userPin);
+                                showAlert("Thành công", true);
+                            } catch (ApplicationException | CardException e) {
+                                showAlert(e.getMessage(), true);
+                            }
+                        },
+                        () -> showAlert("Lỗi", true)
+                ));
+    }
+
+    private void unlockUserCard() {
+
     }
 }

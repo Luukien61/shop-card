@@ -203,10 +203,20 @@
                   </VBox>
 
                   <!-- Verified Badge -->
-                  <HBox alignment="CENTER" spacing="8" style="-fx-background-color: #d4edda; -fx-background-radius: 20; -fx-padding: 8 16;">
+                  <HBox alignment="CENTER" spacing="8" fx:id="verifiedBox"
+                        style="-fx-background-color: #d4edda; -fx-background-radius: 20; -fx-padding: 8 16;">
                      <children>
                         <Label style="-fx-text-fill: #155724; -fx-font-size: 14; -fx-font-weight: bold;" text="✓" />
                         <Label style="-fx-text-fill: #155724; -fx-font-size: 13; -fx-font-weight: bold;" text="Đã xác thực" />
+                     </children>
+                  </HBox>
+
+                  <!-- Box cho CHƯA XÁC THỰC -->
+                  <HBox alignment="CENTER" spacing="8" fx:id="notVerifiedBox"
+                        style="-fx-background-color: #f8d7da; -fx-background-radius: 20; -fx-padding: 8 16;">
+                     <children>
+                        <Label style="-fx-text-fill: #721c24; -fx-font-size: 14; -fx-font-weight: bold;" text="✗" />
+                        <Label style="-fx-text-fill: #721c24; -fx-font-size: 13; -fx-font-weight: bold;" text="Chưa xác thực" />
                      </children>
                   </HBox>
                </children>

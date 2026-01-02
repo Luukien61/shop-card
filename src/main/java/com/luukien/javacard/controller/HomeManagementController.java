@@ -140,7 +140,7 @@ public class HomeManagementController {
         addNewProductBtn.setOnAction(e -> onNewProductBtnClick());
         addNewUserBtn.setOnAction(e -> onNewUserBtnClick());
         handleOrderTabSelected();
-
+        logoutBtnOnClicked();
         initializeProductTab();
         initializeOrderTab();
         initializeUserTab();
@@ -455,6 +455,12 @@ public class HomeManagementController {
                     null,
                     (oldPass, newPass) -> AccountService.updatePassword(oldPass, newPass, currentUserEmail)
             );
+        });
+    }
+
+    private void logoutBtnOnClicked(){
+        logoutBtn.setOnAction(e-> {
+            SceneManager.switchTo(Scenes.LOGIN_SCENE);
         });
     }
 }
