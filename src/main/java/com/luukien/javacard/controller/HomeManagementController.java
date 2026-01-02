@@ -344,7 +344,7 @@ public class HomeManagementController {
     }
 
     private void onNewUserBtnClick() {
-        SceneManager.switchTo(Scenes.INITIAL_CARD_SCENE);
+        SceneManager.showModal(Scenes.INITIAL_CARD_SCENE);
     }
 
     private void handleProductTabSelected() {

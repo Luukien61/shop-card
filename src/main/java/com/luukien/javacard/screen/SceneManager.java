@@ -24,6 +24,7 @@ public class SceneManager {
         scene = primaryStage.getScene();
     }
 
+
     public static void switchTo(String fxmlFile) {
         try {
             Parent root = FXMLLoader.load(Objects.requireNonNull(
