@@ -6,7 +6,7 @@ import javacard.security.*;
 import javacardx.crypto.*;
 
 public class shop_card_owner extends Applet {
-
+    private static final short MAX_BUF = 240;
     private static final short MAX_NAME_LEN = 100;
     private static final short MAX_ADDRESS_LEN = 150;
     private static final short MAX_PHONE_LEN = 20;
@@ -24,6 +24,9 @@ public class shop_card_owner extends Applet {
     // PIN Lock constants
     private static final byte MAX_PIN_TRIES = 5;
     private static final byte PIN_SIZE = 6;
+
+    private byte[] rawData;
+    private short rawLen;
 
     // Encrypted data storage
     private byte[] name;
@@ -81,6 +84,7 @@ public class shop_card_owner extends Applet {
     private static final byte INS_WRITE_CARD_ID = (byte) 0x04;
     private static final byte INS_SET_PINS = (byte) 0x05;
     private static final byte INS_WRITE_AVATAR = (byte) 0x07;
+    private static final byte INS_WRITE_ALL = (byte) 0x08;
     private static final byte INS_CLEAR_ALL_DATA = (byte) 0x10;
     private static final byte INS_CHANGE_USER_PIN = (byte) 0x20;
     private static final byte INS_RECOVER_WITH_ADMIN = (byte) 0x21;
@@ -103,6 +107,7 @@ public class shop_card_owner extends Applet {
         cardId = new byte[MAX_CARDID_LEN];
         avatar = new byte[MAX_AVATAR_LEN];
         tempAvatarBuffer = new byte[MAX_AVATAR_LEN];
+        rawData = new byte[MAX_BUF];
         tempPinBuffer = new byte[PIN_SIZE];
         pinReceived = false;
         userPinHash = new byte[MAX_PIN_HASH_LEN];
@@ -117,7 +122,7 @@ public class shop_card_owner extends Applet {
         tempBuffer32 = new byte[32];
         decryptBuffer = JCSystem.makeTransientByteArray((short) 256, JCSystem.CLEAR_ON_DESELECT);
 
-        nameLen = addressLen = phoneLen = cardIdLen = avatarLen = tempAvatarLen = 0;
+        nameLen = addressLen = phoneLen = cardIdLen = avatarLen = tempAvatarLen = rawLen = 0;
         rsaKeyPair = null;
         encryptedPrivateKeyModulus = new byte[256];
         encryptedPrivateKeyExponent = new byte[256];
@@ -165,22 +170,26 @@ public class shop_card_owner extends Applet {
             }
             case INS_WRITE_USERNAME: {
                 short d = writeEncryptedData(apdu, name, MAX_NAME_LEN, offset, nameLen);
-                nameLen = (short) (offset + d);
+                nameLen += d;
                 break;
             }
             case INS_WRITE_ADDRESS: {
                 short d = writeEncryptedData(apdu, address, MAX_ADDRESS_LEN, offset, addressLen);
-                addressLen = (short) (offset + d);
+                addressLen += d;
                 break;
             }
             case INS_WRITE_PHONE: {
                 short d = writeEncryptedData(apdu, phone, MAX_PHONE_LEN, offset, phoneLen);
-                phoneLen = (short) (offset + d);
+                phoneLen += d;
                 break;
             }
             case INS_WRITE_CARD_ID: {
                 short d = writeData(apdu, cardId, MAX_CARDID_LEN, offset, cardIdLen);
                 cardIdLen += d;
+                break;
+            }
+            case INS_WRITE_ALL: {
+                parseAndEncryptFields(apdu);
                 break;
             }
             case INS_SET_PINS: {
@@ -703,6 +712,157 @@ public class shop_card_owner extends Applet {
         apdu.setOutgoing();
         apdu.setOutgoingLength(totalLen);
         apdu.sendBytes((short) 0, totalLen);
+    }
+
+    /**
+     * Parse data format: PIN|name|phone|cardid|address
+     * Decrypt master key once, then encrypt all fields
+     */
+    private void parseAndEncryptFields(APDU apdu) {
+        byte[] buffer = apdu.getBuffer();
+        short lc = apdu.setIncomingAndReceive();
+
+        if (lc == 0 || lc > MAX_BUF) {
+            ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+        }
+
+        if (!masterKeySet) {
+            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
+
+        if (userPin.getTriesRemaining() == 0) {
+            ISOException.throwIt((short) 0x6983);
+        }
+
+        // Copy data to working buffer
+        Util.arrayCopyNonAtomic(buffer, ISO7816.OFFSET_CDATA, rawData, (short) 0, lc);
+        rawLen = lc;
+
+        byte[] masterKey = new byte[MASTER_KEY_LEN];
+
+        try {
+            // ===== 1. Parse PIN (6 bytes trước dấu '|' đầu tiên) =====
+            short pinLen = findSeparator((short) 0);
+            if (pinLen != 6) {
+                ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+            }
+
+            // Verify PIN
+            if (!userPin.check(rawData, (short) 0, PIN_SIZE)) {
+                ISOException.throwIt((short) (0x63C0 | userPin.getTriesRemaining()));
+            }
+
+            // Verify PIN hash
+            sha256.reset();
+            sha256.doFinal(rawData, (short) 0, (short) 6, tempBuffer32, (short) 0);
+
+            if (Util.arrayCompare(tempBuffer32, (short) 0, userPinHash, (short) 0, (short) 32) != 0) {
+                ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+            }
+
+            // ===== 2. Decrypt Master Key MỘT LẦN =====
+            decryptMasterKeyWithUserPin(rawData, (short) 0, masterKey, (short) 0);
+
+            // Set AES key một lần
+            tempAESKey.setKey(masterKey, (short) 0);
+
+            // ===== 3. Parse và encrypt từng field =====
+            short pos = (short) (pinLen + 1); // Skip PIN và '|'
+
+            // Field 1: Name
+            short rawNameLen = findSeparator(pos);
+            if (rawNameLen > 0) {
+                nameLen = encryptFieldWithKey(rawData, pos, rawNameLen,
+                        name, (short) 0, MAX_NAME_LEN);
+            }
+            pos = (short) (pos + rawNameLen + 1);
+
+            // Field 2: Phone
+            if (pos < rawLen) {
+                short rawPhoneLen = findSeparator(pos);
+                if (rawPhoneLen > 0) {
+                    phoneLen = encryptFieldWithKey(rawData, pos, rawPhoneLen,
+                            phone, (short) 0, MAX_PHONE_LEN);
+                }
+                pos = (short) (pos + rawPhoneLen + 1);
+            }
+
+            // Field 3: Card ID
+            if (pos < rawLen) {
+                cardIdLen = findSeparator(pos);
+                if (cardIdLen > 0) {
+                    Util.arrayCopyNonAtomic(rawData, pos, cardId, (short) 0, cardIdLen);
+                }
+                pos = (short) (pos + cardIdLen + 1);
+            }
+
+            // Field 4: Address (phần còn lại, không có '|' cuối)
+            if (pos < rawLen) {
+                short rawAddressLen = (short) (rawLen - pos);
+                if (rawAddressLen > 0) {
+                    addressLen = encryptFieldWithKey(rawData, pos, rawAddressLen,
+                            address, (short) 0, MAX_ADDRESS_LEN);
+                }
+            }
+
+        } finally {
+            // Clean up
+            Util.arrayFillNonAtomic(masterKey, (short) 0, MASTER_KEY_LEN, (byte) 0x00);
+            Util.arrayFillNonAtomic(tempBuffer32, (short) 0, (short) 32, (byte) 0x00);
+            Util.arrayFillNonAtomic(rawData, (short) 0, rawLen, (byte) 0x00);
+            rawLen = 0;
+        }
+    }
+
+    /**
+     * Encrypt một field với master key đã set sẵn trong tempAESKey
+     *
+     * @return length của encrypted data (đã pad)
+     */
+    private short encryptFieldWithKey(byte[] src, short srcOff, short srcLen,
+                                      byte[] dest, short destOff, short maxLen) {
+        if (srcLen == 0) {
+            return 0;
+        }
+
+        // Calculate padding
+        short padLen = (short) (16 - (srcLen % 16));
+        if (padLen == 0) padLen = 16;
+        short paddedLen = (short) (srcLen + padLen);
+
+        if (paddedLen > maxLen) {
+            ISOException.throwIt(ISO7816.SW_FILE_FULL);
+        }
+
+        byte[] paddedData = new byte[paddedLen];
+
+        try {
+            // Copy data và pad
+            Util.arrayCopyNonAtomic(src, srcOff, paddedData, (short) 0, srcLen);
+            Util.arrayFillNonAtomic(paddedData, srcLen, padLen, (byte) padLen);
+
+            // Encrypt (key đã được set trong tempAESKey)
+            aesCipher.init(tempAESKey, Cipher.MODE_ENCRYPT);
+            aesCipher.doFinal(paddedData, (short) 0, paddedLen, dest, destOff);
+
+            return paddedLen;
+
+        } finally {
+            Util.arrayFillNonAtomic(paddedData, (short) 0, paddedLen, (byte) 0x00);
+        }
+    }
+
+    /**
+     * Tìm vị trí separator '|' từ vị trí start
+     *
+     * @return length của field (không bao gồm '|')
+     */
+    private short findSeparator(short start) {
+        short i = start;
+        while (i < rawLen && rawData[i] != (byte) '|') {
+            i++;
+        }
+        return (short) (i - start);
     }
 
     /**

@@ -32,6 +32,7 @@ public class CardHelper {
     public static final byte INS_WRITE_CARD_ID = (byte) 0x04;
     public static final byte INS_SET_PINS = (byte) 0x05;
     public static final byte INS_WRITE_AVATAR = (byte) 0x07;
+    private static final byte INS_WRITE_ALL = (byte) 0x08;
     public static final byte INS_CLEAR_DATA = (byte) 0x10;
     public static final byte INS_UPDATE_USER_PIN = (byte) 0x20;
     public static final byte INS_VERIFY_PIN = (byte) 0x40;
@@ -102,17 +103,53 @@ public class CardHelper {
             System.out.println("Avatar length: " + avatarData.length + " bytes");
 
             sendData(channel, INS_SET_PINS, setPINData);
+            byte separator = (byte) '|';
 
-            sendData(channel, INS_WRITE_USERNAME,
-                    withUserPin(userPINData, usernameData));
+            int totalLen =
+                    userPINData.length +
+                            usernameData.length +
+                            phoneData.length +
+                            cardIdData.length +
+                            addressData.length +
+                            4; // có 4 dấu |
 
-            sendData(channel, INS_WRITE_ADDRESS,
-                    withUserPin(userPINData, addressData));
+            byte[] allData = new byte[totalLen];
 
-            sendData(channel, INS_WRITE_PHONE,
-                    withUserPin(userPINData, phoneData));
+            int offset = 0;
 
-            sendData(channel, INS_WRITE_CARD_ID, cardIdData);
+            System.arraycopy(userPINData, 0, allData, offset, userPINData.length);
+            offset += userPINData.length;
+            allData[offset++] = separator;
+
+            System.arraycopy(usernameData, 0, allData, offset, usernameData.length);
+            offset += usernameData.length;
+            allData[offset++] = separator;
+
+
+            System.arraycopy(phoneData, 0, allData, offset, phoneData.length);
+            offset += phoneData.length;
+            allData[offset++] = separator;
+
+
+            System.arraycopy(cardIdData, 0, allData, offset, cardIdData.length);
+            offset += cardIdData.length;
+            allData[offset++] = separator;
+
+
+            System.arraycopy(addressData, 0, allData, offset, addressData.length);
+
+            sendData(channel, INS_WRITE_ALL, allData);
+
+//            sendData(channel, INS_WRITE_USERNAME,
+//                    withUserPin(userPINData, usernameData));
+//
+//            sendData(channel, INS_WRITE_ADDRESS,
+//                    withUserPin(userPINData, addressData));
+//
+//            sendData(channel, INS_WRITE_PHONE,
+//                    withUserPin(userPINData, phoneData));
+//
+//            sendData(channel, INS_WRITE_CARD_ID, cardIdData);
 
             sendAvatarData(channel, INS_WRITE_AVATAR, userPINData, avatarData);
             return initiateKey(channel, userPIN);
@@ -383,7 +420,7 @@ public class CardHelper {
             int remaining = totalLen - offset;
             boolean isLastChunk = (remaining <= MAX_APDU_DATA);
 
-            byte p1 = isLastChunk ? (byte)0x01 : (byte)0x00;
+            byte p1 = isLastChunk ? (byte) 0x01 : (byte) 0x00;
             int chunkLen = Math.min(MAX_APDU_DATA, remaining);
 
             byte[] payload = new byte[chunkLen];
