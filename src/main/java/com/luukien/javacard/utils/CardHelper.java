@@ -142,17 +142,6 @@ public class CardHelper {
 
             sendData(channel, INS_WRITE_ALL, allData);
 
-//            sendData(channel, INS_WRITE_USERNAME,
-//                    withUserPin(userPINData, usernameData));
-//
-//            sendData(channel, INS_WRITE_ADDRESS,
-//                    withUserPin(userPINData, addressData));
-//
-//            sendData(channel, INS_WRITE_PHONE,
-//                    withUserPin(userPINData, phoneData));
-//
-//            sendData(channel, INS_WRITE_CARD_ID, cardIdData);
-
             sendAvatarData(channel, INS_WRITE_AVATAR, userPINData, avatarData);
             return initiateKey(channel, userPIN);
         } catch (Exception e) {
@@ -530,6 +519,21 @@ public class CardHelper {
         }
         byte[] pinData = pin.getBytes(StandardCharsets.UTF_8);
         return readData(channel, INS_READ_ALL_DATA, pinData);
+    }
+
+    public static Boolean isCardPluginAndValidCardId(String cardId) {
+        try {
+            CardChannel channel = connect();
+            CommandAPDU select = selectAID(AID);
+            ResponseAPDU resp = channel.transmit(select);
+            if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
+                throw new RuntimeException("unable to select the applet");
+            }
+            String _cardId = readCardId(channel);
+            return cardId.equals(_cardId);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private static UserCardInfo readData(CardChannel channel, byte ins, byte[] pin) throws Exception {

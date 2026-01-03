@@ -19,6 +19,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import javax.smartcardio.CardException;
@@ -34,6 +35,8 @@ import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 
 public class UserInfoController {
 
+    @FXML
+    private VBox pinManagement;
     @FXML
     private Button topUpBtn;
     @FXML
@@ -70,6 +73,7 @@ public class UserInfoController {
     private ToggleGroup gender;
 
     private User user;
+    private boolean isCardPluginAndValidCardId;
 
     @FXML
     private void initialize() {
@@ -121,6 +125,9 @@ public class UserInfoController {
             stage.close();
 
         });
+        isCardPluginAndValidCardId = CardHelper.isCardPluginAndValidCardId(user.getCardId());
+        pinManagement.setVisible(isCardPluginAndValidCardId);
+        pinManagement.setManaged(isCardPluginAndValidCardId);
     }
 
     private String setupBalanceText() {

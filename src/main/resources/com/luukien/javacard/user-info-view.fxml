@@ -174,7 +174,7 @@
                                           </VBox>
 
                                                 <!-- PIN -->
-                                          <VBox maxHeight="50.0" style="-fx-background-color: #FEF3C7; -fx-background-radius: 10; -fx-padding: 8;">
+                                          <VBox fx:id="pinManagement" maxHeight="50.0" style="-fx-background-color: #FEF3C7; -fx-background-radius: 10; -fx-padding: 8;">
                                               <children>
                                                   <Label text="Mã PIN" textFill="#374151">
                                                       <font>
