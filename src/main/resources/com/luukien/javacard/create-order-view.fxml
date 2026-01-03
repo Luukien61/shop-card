@@ -8,13 +8,11 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="650.0" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
-fx:controller="com.luukien.javacard.controller.CreateOrderController">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="650.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.CreateOrderController">
    <children>
       <AnchorPane fx:id="anchor" focusTraversable="true" onMouseClicked="#onAnchorClicked" prefHeight="500.0" prefWidth="650.0" style="-fx-background-color: #FFFFFF;">
          <children>
-             <TableView fx:id="tableView" layoutX="1.0" prefHeight="313.0" prefWidth="650.0">
+             <TableView fx:id="tableView" layoutX="1.0" layoutY="56.0" prefHeight="313.0" prefWidth="650.0">
                  <columns>
                      <TableColumn fx:id="colProductCode" prefWidth="88.66665649414062" text="Mã sản phẩm" />
                      <TableColumn fx:id="colProductName" prefWidth="166.0000228881836" text="Tên sản phẩm" />
@@ -24,26 +22,27 @@ fx:controller="com.luukien.javacard.controller.CreateOrderController">
                      <TableColumn fx:id="colDelete" prefWidth="63.0" text="" />
                  </columns>
              </TableView>
-            <Button fx:id="paymentBtn" layoutX="443.0" layoutY="402.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #0866FF;" text="Thanh toán" textFill="WHITE">
+            <Button fx:id="paymentBtn" layoutX="443.0" layoutY="428.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #0866FF;" text="Thanh toán" textFill="WHITE">
                <font>
                   <Font name="System Bold" size="14.0" />
                </font>
             </Button>
-            <Button fx:id="cancelBtn" layoutX="101.0" layoutY="402.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #ff0000;" text="Huỷ" textFill="WHITE">
+            <Button fx:id="cancelBtn" layoutX="101.0" layoutY="428.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #ff0000;" text="Huỷ" textFill="WHITE">
                <font>
                   <Font name="System Bold" size="14.0" />
                </font>
             </Button>
-            <Label layoutX="365.0" layoutY="328.0" text="Tổng tiền:">
+            <Label layoutX="367.0" layoutY="385.0" text="Tổng tiền:">
                <font>
                   <Font size="14.0" />
                </font>
             </Label>
-            <Label fx:id="totalPriceLabel" layoutX="468.0" layoutY="328.0" prefWidth="150.0" text="Label">
+            <Label fx:id="totalPriceLabel" layoutX="470.0" layoutY="385.0" prefWidth="150.0" text="Label">
                <font>
                   <Font name="System Bold Italic" size="14.0" />
                </font>
             </Label>
+            <Button fx:id="backButton" layoutX="25.0" layoutY="14.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="75.0" text="Quay lại" />
          </children>
       </AnchorPane>
    </children>

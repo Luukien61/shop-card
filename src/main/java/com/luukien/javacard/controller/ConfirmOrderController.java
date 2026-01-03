@@ -1,10 +1,8 @@
 package com.luukien.javacard.controller;
 
 import com.luukien.javacard.dialog.VerifyCredentialDialog;
-import com.luukien.javacard.exception.OrderException;
+import com.luukien.javacard.exception.ApplicationException;
 import com.luukien.javacard.model.*;
-import com.luukien.javacard.screen.SceneManager;
-import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.service.OrderService;
 import com.luukien.javacard.utils.CardHelper;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -15,7 +13,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 import javax.smartcardio.CardException;
 import java.io.ByteArrayInputStream;
@@ -24,6 +24,10 @@ import java.util.Base64;
 import java.util.List;
 
 public class ConfirmOrderController {
+    @FXML
+    private HBox verifiedBox;
+    @FXML
+    private HBox notVerifiedBox;
     @FXML
     private Label errLabel;
     @FXML
@@ -116,6 +120,16 @@ public class ConfirmOrderController {
     }
 
     private void onPinRequest() {
+        try{
+            boolean isCardLocked = CardHelper.getLockStatus();
+            if(isCardLocked){
+                showAlert("Khóa thẻ", "Thẻ bị khóa");
+                return;
+            }
+        } catch (CardException e) {
+            showAlert("Có lỗi xảy ra", "Có lỗi xảy ra khi đọc thẻ!");
+            return;
+        }
         VerifyCredentialDialog.show(
                 SecretType.PIN,
                 "Xác thực PIN người dùng",
@@ -131,7 +145,6 @@ public class ConfirmOrderController {
                 (userPin) -> {
                     try {
                         userCardInfo = orderService.getUserCardInfo(userPin);
-                        // Hiển thị thông tin người dùng sau khi xác thực thành công
                         displayUserInfo();
                     } catch (Exception e) {
                         showAlert("Lỗi", e.getMessage());
@@ -198,6 +211,11 @@ public class ConfirmOrderController {
             }
         }
 
+        Boolean isCardVerified = userCardInfo.getIsCardVerified();
+        verifiedBox.setVisible(isCardVerified);
+        verifiedBox.setManaged(isCardVerified);
+        notVerifiedBox.setVisible(!isCardVerified);
+        notVerifiedBox.setManaged(!isCardVerified);
     }
 
     /**
@@ -250,7 +268,8 @@ public class ConfirmOrderController {
      */
     private void handleBack() {
 
-        SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+        Stage stage = (Stage) backBtn.getScene().getWindow();
+        stage.close();
     }
 
     /**
@@ -305,7 +324,7 @@ public class ConfirmOrderController {
             showAlert("Thành công!", "Đơn hàng đã được tạo thành công!");
 
             handleBack();
-        } catch (OrderException e) {
+        } catch (ApplicationException e) {
             showAlert("Lỗi", e.getMessage());
         }
     }
@@ -319,15 +338,7 @@ public class ConfirmOrderController {
     }
 
     private void checkCardInsertState() {
-        Boolean isCardVerified = false;
-        try {
-            isCardVerified = orderService.isCardVerified();
-            if (!isCardVerified) {
-                errLabel.setText("Thẻ không xác minh!");
-            }
-        } catch (Exception e) {
-            errLabel.setText(e.getMessage());
-        }
+        boolean isCardVerified = true;
 
         noCardBox.setVisible(!isCardVerified);
         noCardBox.setManaged(!isCardVerified);

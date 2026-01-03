@@ -1,7 +1,9 @@
 package com.luukien.javacard.controller;
 
+import com.luukien.javacard.dialog.TopupDialog;
 import com.luukien.javacard.dialog.UpdateCredentialDialog;
 import com.luukien.javacard.dialog.VerifyCredentialDialog;
+import com.luukien.javacard.exception.ApplicationException;
 import com.luukien.javacard.model.SecretType;
 import com.luukien.javacard.model.User;
 import com.luukien.javacard.screen.SceneManager;
@@ -17,16 +19,25 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.stage.Stage;
 
+import javax.smartcardio.CardException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.Optional;
+
+import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 
 public class UserInfoController {
 
+    @FXML
+    private Button topUpBtn;
+    @FXML
+    private Button forgotPinBtn;
     @FXML
     private TextField cardIdTextField;
     @FXML
@@ -105,29 +116,16 @@ public class UserInfoController {
 
         loadUserImage(user.getImage());
         updateButtonStates();
+        backButton.setOnAction(e -> {
+            Stage stage = (Stage) backButton.getScene().getWindow();
+            stage.close();
+
+        });
     }
 
     private String setupBalanceText() {
         BigDecimal balance = user.getBalance() != null ? user.getBalance() : BigDecimal.ZERO;
 
-        String tier = user.getMemberTier();
-
-        String tierColor = switch (tier.toUpperCase()) {
-            case "SILVER" -> "#94a3b8";
-            case "GOLD" -> "#f59e0b";
-            case "PLATINUM", "DIAMOND" -> "#e879f9";
-            case "BRONZE" -> "#c2410c";
-            default -> "#6b7280";
-        };
-
-        String tierDisplay = switch (tier.toUpperCase()) {
-            case "BRONZE" -> "Đồng";
-            case "SILVER" -> "Bạc";
-            case "GOLD" -> "Vàng";
-            case "PLATINUM" -> "Bạch Kim";
-            case "DIAMOND" -> "Kim Cương";
-            default -> tier;
-        };
 
         return String.format("%,.0f", balance);
     }
@@ -188,29 +186,90 @@ public class UserInfoController {
 
     private void updateButtonStates() {
         boolean isAdmin = AppState.getInstance().isAdminMode();
-        String currentEmail = AppState.getInstance().getCurrentUserEmail();
-        unlockBtn.setVisible(isAdmin);
-        unlockBtn.setManaged(isAdmin);
-        unlockBtn.setDisable(!isAdmin);
+        boolean isCardLocked = false;
+        try {
+            isCardLocked = CardHelper.getLockStatus();
+        } catch (CardException e) {
+            showAlert("Không đọc được thẻ", true);
+        }
+
+        unlockBtn.setVisible(isAdmin && isCardLocked);
+        unlockBtn.setManaged(isAdmin && isCardLocked);
+        unlockBtn.setDisable(!isAdmin || !isCardLocked);
+        unlockBtn.setOnAction(e -> VerifyCredentialDialog.show(
+                SecretType.PIN,
+                "Xác thực PIN Admin",
+                5,
+                DatabaseHelper::verifySysUserPin,
+                (adminPin) -> {
+                    try {
+                        CardHelper.unlockCard(adminPin);
+                        showAlert("Mở khoá thành công", true);
+                        unlockBtn.setVisible(false);
+                        unlockBtn.setManaged(false);
+                        unlockBtn.setDisable(true);
+                    } catch (CardException ex) {
+                        showAlert("Không đọc được thẻ", true);
+                    }
+                },
+                () -> showAlert("Thẻ bị khóa tạm thời!", true)
+        ));
+
         changePinBtn.setVisible(isAdmin);
         changePinBtn.setManaged(isAdmin);
         changePinBtn.setDisable(!isAdmin);
         changePinBtn.setOnAction(e -> VerifyCredentialDialog.show(
-                SecretType.PASSWORD,
-                null,
+                SecretType.PIN,
+                "Xác thực PIN Admin",
                 5,
-                (password) -> AccountService.verifyPassword(password, currentEmail),
-                (ignore) -> UpdateCredentialDialog.show(
+                DatabaseHelper::verifySysUserPin,
+                (adminPin) -> UpdateCredentialDialog.show(
                         SecretType.PIN,
                         null,
                         null,
                         CardHelper::changeUserPin
                 ),
-                null
+                () -> showAlert("Thẻ bị khóa tạm thời!", true)
         ));
 
-       // backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
+        forgotPinBtn.setOnAction(e -> onForgotPinBtnClick());
+        topUpBtn.setOnAction(e -> {
+            TopupDialog.show().ifPresent(amount -> {
+                try {
+                    DatabaseHelper.updateUserBalance(user.getPhone(), amount);
+                    showAlert("Thành công", true);
+                    user = getDetailUser(user.getPhone());
+                    String htmlText = setupBalanceText();
+                    balanceLabel.setText(htmlText);
+                } catch (ApplicationException ex) {
+                    showAlert("Có lỗi xảy ra. Vui lòng thử lại sau", true);
+                }
+            });
+        });
+
+
     }
 
+    private void onForgotPinBtnClick() {
+        ApplicationHelper
+                .showPinDialog("Khởi tạo PIN", "Nhập PIN mới cho tài khoản").ifPresent(userPin -> VerifyCredentialDialog.show(
+                        SecretType.PIN,
+                        "Xác thực PIN Admin",
+                        5,
+                        DatabaseHelper::verifySysUserPin,
+                        (adminPin) -> {
+                            try {
+                                CardHelper.recoverUserPinWithAdmin(adminPin, userPin);
+                                showAlert("Thành công", true);
+                            } catch (ApplicationException | CardException e) {
+                                showAlert(e.getMessage(), true);
+                            }
+                        },
+                        () -> showAlert("Lỗi", true)
+                ));
+    }
 
+    private void unlockUserCard() {
+
+    }
 }

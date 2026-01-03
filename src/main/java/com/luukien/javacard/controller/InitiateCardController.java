@@ -9,7 +9,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.time.LocalDate;
@@ -17,6 +19,9 @@ import java.time.LocalDate;
 import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 
 public class InitiateCardController {
+
+
+    private static final boolean USE_PIN_DIALOG = false;
 
     @FXML
     private Button backButton;
@@ -41,6 +46,12 @@ public class InitiateCardController {
     @FXML
     private Button finishBtn;
 
+    // Thêm các thành phần mới cho PIN input
+    @FXML
+    private VBox pinInputContainer;
+    @FXML
+    private PasswordField userPinField;
+
     private File selectedImageFile = null;
 
 
@@ -49,9 +60,51 @@ public class InitiateCardController {
         dateField.setConverter(DateConverter.getLocalDateConverter());
         chooseImageBtn.setOnAction(e -> onChooseImage());
         finishBtn.setOnAction(e -> onFinish());
-        backButton.setOnAction(e -> SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE));
+        backButton.setOnAction(e ->  handleBack());
+
+        // Kiểm soát hiển thị PIN input dựa trên biến cấu hình
+        setupPinInputVisibility();
+
+        // Thêm validation cho PIN field nếu được hiển thị
+        if (!USE_PIN_DIALOG && userPinField != null) {
+            setupPinValidation();
+        }
     }
 
+    /**
+     * Cấu hình hiển thị PIN input dựa trên biến USE_PIN_DIALOG
+     */
+    private void setupPinInputVisibility() {
+        if (pinInputContainer != null) {
+            pinInputContainer.setVisible(!USE_PIN_DIALOG);
+            pinInputContainer.setManaged(!USE_PIN_DIALOG);
+        }
+    }
+
+    /**
+     * Thiết lập validation cho PIN field
+     */
+    private void setupPinValidation() {
+        // Chỉ cho phép nhập số
+        userPinField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                userPinField.setText(newValue.replaceAll("[^\\d]", ""));
+            }
+            // Giới hạn độ dài (4-8 chữ số)
+            if (newValue.length() > 6) {
+                userPinField.setText(newValue.substring(0, 6));
+            }
+        });
+
+        // Thêm style khi focus
+        userPinField.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                userPinField.setStyle("-fx-background-color: #FFFBEB; -fx-border-color: #F59E0B; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10;");
+            } else {
+                userPinField.setStyle("-fx-background-color: #FEF3C7; -fx-border-color: #FCD34D; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10;");
+            }
+        });
+    }
 
     @FXML
     private void onChooseImage() {
@@ -72,20 +125,42 @@ public class InitiateCardController {
 
     @FXML
     private void onFinish() {
-
-        String username = usernameField.getText();
+        String username = usernameField.getText().trim();
         LocalDate birthDate = dateField.getValue();
-        String phone = phoneField.getText();
-        String address = addressField.getText();
+        String phone = phoneField.getText().trim();
+        String address = addressField.getText().trim();
 
+        // Validate phone number
+        if (phone.length() < 10 || phone.length() > 12) {
+            showAlert("Số điện thoại không đúng định dạng (10-12 chữ số)", true);
+            return;
+        }
 
+        // Get selected gender
         String genderSelected = menGender.isSelected() ? "Nam" : womenGender.isSelected() ? "Nữ" : "";
 
-        if (username.isEmpty() || birthDate == null || phone.isEmpty() || address.isEmpty() || selectedImageFile == null) {
+        // Validate required fields
+        if (username.isEmpty() || birthDate == null || phone.isEmpty() || address.isEmpty()
+                || genderSelected.isEmpty() || selectedImageFile == null) {
             showAlert("Vui lòng điền đầy đủ thông tin!", true);
             return;
         }
 
+        // Xử lý theo chế độ PIN
+        if (USE_PIN_DIALOG) {
+            // Chế độ 1: Hiển thị dialog để nhập PIN
+            handlePinWithDialog(username, address, phone, birthDate, genderSelected);
+        } else {
+            // Chế độ 2: Lấy PIN từ input trên giao diện
+            handlePinWithInput(username, address, phone, birthDate, genderSelected);
+        }
+    }
+
+    /**
+     * Xử lý PIN bằng dialog (chế độ cũ)
+     */
+    private void handlePinWithDialog(String username, String address, String phone,
+                                     LocalDate birthDate, String genderSelected) {
         ApplicationHelper
                 .showPinDialog("Khởi tạo PIN", "Nhập PIN mới cho tài khoản").ifPresent(userPin -> {
                     VerifyCredentialDialog.show(
@@ -97,7 +172,43 @@ public class InitiateCardController {
                             () -> showAlert("Thẻ bị khóa tạm thời!", true)
                     );
                 });
+    }
 
+    /**
+     * Xử lý PIN từ input trên giao diện (chế độ mới)
+     */
+    private void handlePinWithInput(String username, String address, String phone,
+                                    LocalDate birthDate, String genderSelected) {
+        String userPin = userPinField.getText().trim();
+
+        // Validate PIN
+        if (userPin.isEmpty()) {
+            showAlert("Vui lòng nhập mã PIN cho thẻ mới!", true);
+            userPinField.requestFocus();
+            return;
+        }
+
+        if (userPin.length() !=6) {
+            showAlert("Mã PIN phải có 6 chữ số!", true);
+            userPinField.requestFocus();
+            return;
+        }
+
+        if (!userPin.matches("\\d+")) {
+            showAlert("Mã PIN chỉ được chứa chữ số!", true);
+            userPinField.requestFocus();
+            return;
+        }
+
+        // Xác thực Admin PIN
+        VerifyCredentialDialog.show(
+                SecretType.PIN,
+                "Xác thực PIN Admin",
+                5,
+                DatabaseHelper::verifySysUserPin,
+                (adminPin) -> initiateCard(username, address, phone, birthDate, genderSelected, userPin, adminPin),
+                () -> showAlert("Thẻ bị khóa tạm thời!", true)
+        );
     }
 
     private void initiateCard(
@@ -126,24 +237,16 @@ public class InitiateCardController {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             ApplicationHelper.updateProgress("Đang ghi thẻ (lần " + attempt + "/" + MAX_ATTEMPTS + ")...");
 
-            String[] genResult = CardHelper.initiateKeyAndCardId();
-            if (genResult == null || genResult.length != 2) {
-                CardHelper.clearCardData();
-                continue;
-            }
+            finalCardId = CardHelper.generate16Digits(phone);
 
-            finalPublicKey = genResult[0];
-            finalCardId = genResult[1];
-
-
-            Boolean writeSuccess = CardHelper.initiateCard(
+            finalPublicKey = CardHelper.initiateCard(
                     username, address, phone,
                     userPin, adminPin,
                     selectedImageFile,
                     finalCardId
             );
 
-            if (writeSuccess) {
+            if (finalPublicKey != null) {
                 cardInitialized = true;
                 break;
             } else {
@@ -152,7 +255,6 @@ public class InitiateCardController {
                 ApplicationHelper.delay(1500);
             }
         }
-
 
         if (!cardInitialized) {
             ApplicationHelper.hideProgress();
@@ -166,6 +268,7 @@ public class InitiateCardController {
             );
             return;
         }
+
         if (selectedImageFile != null) {
             uploadImageUrl = CloudinaryHelper.uploadImage(selectedImageFile);
             if (uploadImageUrl == null) {
@@ -175,6 +278,7 @@ public class InitiateCardController {
                 return;
             }
         }
+
         boolean dbSuccess = DatabaseHelper.insertUser(
                 username,
                 address,
@@ -193,7 +297,7 @@ public class InitiateCardController {
                     "Khởi tạo thẻ thành công!\n\nCard ID: " + finalCardId,
                     false
             );
-            //SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+            handleBack();
         } else {
             ApplicationHelper.showAlert(
                     "Ghi thẻ thành công nhưng lưu CSDL thất bại!\n" +
@@ -202,7 +306,14 @@ public class InitiateCardController {
                             "Vui lòng báo admin để xử lý dữ liệu CSDL.",
                     true
             );
-            SceneManager.switchTo(Scenes.HOME_MANAGEMENT_SCENE);
+            CardHelper.clearCardData();
+            handleBack();
         }
+    }
+
+    private void handleBack() {
+
+        Stage stage = (Stage) backButton.getScene().getWindow();
+        stage.close();
     }
 }

@@ -1,8 +1,10 @@
 package com.luukien.javacard.utils;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
+import com.luukien.javacard.exception.ApplicationException;
 import com.luukien.javacard.state.AppState;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
 
@@ -172,6 +174,37 @@ public class DatabaseHelper {
         }
         return null;
     }
+
+
+
+
+    public static void updateUserBalance(String phone, BigDecimal amount)
+            throws ApplicationException {
+
+        String sql =
+                "UPDATE users " +
+                        "SET balance = balance + ?, updated_at = NOW() " +
+                        "WHERE phone = ?";
+
+        try (Connection conn = DatabaseHelper.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setBigDecimal(1, amount);
+            ps.setString(2, phone);
+
+            int updated = ps.executeUpdate();
+
+            if (updated == 0) {
+                throw new ApplicationException("Không tìm thấy người dùng");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new ApplicationException("Không thể cập nhật số dư. Vui lòng thử lại");
+        }
+    }
+
+
 
 
 
