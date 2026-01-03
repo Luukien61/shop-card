@@ -233,6 +233,9 @@ public class UserInfoController {
         ));
 
         forgotPinBtn.setOnAction(e -> onForgotPinBtnClick());
+        forgotPinBtn.setVisible(isAdmin);
+        forgotPinBtn.setManaged(isAdmin);
+        forgotPinBtn.setDisable(!isAdmin);
         topUpBtn.setOnAction(e -> {
             TopupDialog.show().ifPresent(amount -> {
                 try {
