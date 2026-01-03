@@ -208,9 +208,10 @@ public class UpdateUserCardController {
         boolean isAvatarChanged = selectedImageFile != null;
 
         if (isNameChanged || isPhoneChanged || isAddressChanged) {
-            CardHelper.updateCardData(userPin, userName, phone, address, selectedImageFile);
+            CardHelper.updateCardData(userPin, userName, phone, address);
         }
         if (isAvatarChanged) {
+            CardHelper.updateAvatar(userPin, selectedImageFile);
             avatar = CloudinaryHelper.uploadImage(selectedImageFile);
             if (avatar == null) {
                 ApplicationHelper.showAlert("Upload ảnh thất bại!", true);

@@ -169,7 +169,7 @@ public class CardHelper {
         return out;
     }
 
-    public static void updateCardData(String pin, String name, String phone, String address, File avatar) throws CardException, IOException {
+    public static void updateCardData(String pin, String name, String phone, String address) throws CardException, IOException {
         byte[] pinData = pin.getBytes(StandardCharsets.UTF_8);
         byte[] usernameData = null;
         byte[] addressData = null;
@@ -219,16 +219,20 @@ public class CardHelper {
             throw new RuntimeException("unable to select the applet");
         }
         sendData(channel, INS_UPDATE_DATA, allData);
-        if (avatar != null) {
-            updateAvatar(channel, pinData, avatar);
-        }
     }
 
-    public static void updateAvatar(CardChannel channel, byte[] userPinData, File avatar) throws IOException, CardException {
+    public static void updateAvatar(String pin, File avatar) throws IOException, CardException {
         BufferedImage original = ImageIO.read(avatar);
         BufferedImage resized = resize(original, 200, 200);
         byte[] avatarData = compressImage(resized, 0.6f);
         System.out.println("Avatar length: " + avatarData.length + " bytes");
+        byte[] userPinData = pin.getBytes(StandardCharsets.UTF_8);
+        CardChannel channel = connect();
+        CommandAPDU select = selectAID(AID);
+        ResponseAPDU resp = channel.transmit(select);
+        if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
+            throw new RuntimeException("unable to select the applet");
+        }
         sendAvatarData(channel, INS_WRITE_AVATAR, userPinData, avatarData);
     }
 
