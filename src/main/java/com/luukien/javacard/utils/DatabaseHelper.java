@@ -176,8 +176,6 @@ public class DatabaseHelper {
     }
 
 
-
-
     public static void updateUserBalance(String phone, BigDecimal amount)
             throws ApplicationException {
 
@@ -204,8 +202,47 @@ public class DatabaseHelper {
         }
     }
 
+    public static void updateUser(String userName,
+                                  String phone,
+                                  String address,
+                                  String gender,
+                                  String prePhone,
+                                  String imageUrl,
+                                  LocalDate dateOfBirth) throws ApplicationException {
 
+        String sql =
+                "UPDATE users " +
+                        "SET user_name = ?, " +
+                        "address = ?, " +
+                        "image = ?, " +
+                        "date_of_birth = ?, " +
+                        "gender = ?, " +
+                        "phone = ? , " +
+                        "updated_at = NOW() " +
+                        "WHERE phone = ?";
 
+        try (Connection conn = DatabaseHelper.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, userName);
+            ps.setString(2, address);
+            ps.setString(3, imageUrl);
+            ps.setDate(4, Date.valueOf(dateOfBirth));
+            ps.setString(5, gender);
+            ps.setString(6, phone);
+            ps.setString(7, prePhone);
+
+            int updated = ps.executeUpdate();
+
+            if (updated == 0) {
+                throw new ApplicationException("Không tìm thấy người dùng");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new ApplicationException("Không thể cập nhật số dư. Vui lòng thử lại");
+        }
+    }
 
 
     public static int deleteIncompleteUser(String phone, String cardId) {

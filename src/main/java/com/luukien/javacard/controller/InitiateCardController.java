@@ -2,8 +2,6 @@ package com.luukien.javacard.controller;
 
 import com.luukien.javacard.dialog.VerifyCredentialDialog;
 import com.luukien.javacard.model.SecretType;
-import com.luukien.javacard.screen.SceneManager;
-import com.luukien.javacard.screen.Scenes;
 import com.luukien.javacard.utils.*;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -131,8 +129,8 @@ public class InitiateCardController {
         String address = addressField.getText().trim();
 
         // Validate phone number
-        if (phone.length() < 10 || phone.length() > 12) {
-            showAlert("Số điện thoại không đúng định dạng (10-12 chữ số)", true);
+        if (phone.length() < 10 || phone.length() > 11) {
+            showAlert("Số điện thoại không đúng định dạng (10-11 chữ số)", true);
             return;
         }
 
@@ -312,7 +310,6 @@ public class InitiateCardController {
     }
 
     private void handleBack() {
-
         Stage stage = (Stage) backButton.getScene().getWindow();
         stage.close();
     }

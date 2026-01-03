@@ -247,6 +247,11 @@ public class UserInfoController {
             });
         });
 
+        updateBtn.setOnAction(e -> {
+            SceneManager.showModal(Scenes.UPDATE_USER_CARD_SCENE);
+            initialize();
+        });
+
 
     }
 
@@ -269,7 +274,4 @@ public class UserInfoController {
                 ));
     }
 
-    private void unlockUserCard() {
-
-    }
 }

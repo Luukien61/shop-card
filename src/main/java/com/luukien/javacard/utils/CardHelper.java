@@ -2,6 +2,7 @@ package com.luukien.javacard.utils;
 
 import com.luukien.javacard.exception.ApplicationException;
 import com.luukien.javacard.model.UserCardInfo;
+import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -43,7 +44,8 @@ public class CardHelper {
     public static final byte INS_RECOVER_WITH_ADMIN = (byte) 0x21;
     private static final byte INS_GET_LOCK_STATUS = (byte) 0x30;
     private static final byte INS_UNLOCK_CARD = (byte) 0x31;
-
+    private static final byte INS_UPDATE_DATA = (byte) 0x32;
+    private static final byte INS_UPDATE_AVATAR = (byte) 0x33;
 
     public static final String SUCCESS_RESPONSE = "9000";
 
@@ -131,12 +133,12 @@ public class CardHelper {
             allData[offset++] = separator;
 
 
-            System.arraycopy(cardIdData, 0, allData, offset, cardIdData.length);
-            offset += cardIdData.length;
+            System.arraycopy(addressData, 0, allData, offset, addressData.length);
+            offset += addressData.length;
             allData[offset++] = separator;
 
 
-            System.arraycopy(addressData, 0, allData, offset, addressData.length);
+            System.arraycopy(cardIdData, 0, allData, offset, cardIdData.length);
 
             sendData(channel, INS_WRITE_ALL, allData);
 
@@ -165,6 +167,69 @@ public class CardHelper {
         System.arraycopy(userPin, 0, out, 0, userPin.length);
         System.arraycopy(data, 0, out, userPin.length, data.length);
         return out;
+    }
+
+    public static void updateCardData(String pin, String name, String phone, String address, File avatar) throws CardException, IOException {
+        byte[] pinData = pin.getBytes(StandardCharsets.UTF_8);
+        byte[] usernameData = null;
+        byte[] addressData = null;
+        byte[] phoneData = null;
+        int userNameSize = 0;
+        int phoneSize = 0;
+        int addressSize = 0;
+        byte separator = (byte) '|';
+        if (name != null) {
+            usernameData = name.getBytes(StandardCharsets.UTF_8);
+            userNameSize = usernameData.length;
+        }
+        if (address != null) {
+            addressData = address.getBytes(StandardCharsets.UTF_8);
+            addressSize = addressData.length;
+        }
+        if (phone != null) {
+            phoneData = phone.getBytes(StandardCharsets.UTF_8);
+            phoneSize = phoneData.length;
+        }
+
+        byte[] allData = new byte[userNameSize + addressSize + phoneSize + pinData.length + 3];
+
+        int offset = 0;
+
+        System.arraycopy(pinData, 0, allData, offset, pinData.length);
+        offset += pinData.length;
+        allData[offset++] = separator;
+
+        if (usernameData != null) {
+            System.arraycopy(usernameData, 0, allData, offset, userNameSize);
+            offset += userNameSize;
+            allData[offset++] = separator;
+        }
+        if (phoneData != null) {
+            System.arraycopy(phoneData, 0, allData, offset, phoneSize);
+            offset += phoneSize;
+            allData[offset++] = separator;
+        }
+        if (addressData != null) {
+            System.arraycopy(addressData, 0, allData, offset, addressSize);
+        }
+        CardChannel channel = connect();
+        CommandAPDU select = selectAID(AID);
+        ResponseAPDU resp = channel.transmit(select);
+        if (!Integer.toHexString(resp.getSW()).equals(SUCCESS_RESPONSE)) {
+            throw new RuntimeException("unable to select the applet");
+        }
+        sendData(channel, INS_UPDATE_DATA, allData);
+        if (avatar != null) {
+            updateAvatar(channel, pinData, avatar);
+        }
+    }
+
+    public static void updateAvatar(CardChannel channel, byte[] userPinData, File avatar) throws IOException, CardException {
+        BufferedImage original = ImageIO.read(avatar);
+        BufferedImage resized = resize(original, 200, 200);
+        byte[] avatarData = compressImage(resized, 0.6f);
+        System.out.println("Avatar length: " + avatarData.length + " bytes");
+        sendAvatarData(channel, INS_WRITE_AVATAR, userPinData, avatarData);
     }
 
 

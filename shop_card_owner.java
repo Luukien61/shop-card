@@ -99,6 +99,8 @@ public class shop_card_owner extends Applet {
     private static final byte INS_READ_ALL_DATA = (byte) 0x55;
     private static final byte INS_VERIFY_CARD = (byte) 0x11;
     private static final byte INS_UNLOCK_CARD = (byte) 0x31;
+    private static final byte INS_UPDATE_DATA = (byte) 0x32;
+    private static final byte INS_UPDATE_AVATAR = (byte) 0x33;
 
     private shop_card_owner() {
         name = new byte[MAX_NAME_LEN];
@@ -200,6 +202,10 @@ public class shop_card_owner extends Applet {
                 avatarLen = writeEncryptedDataChunked(apdu, avatar, MAX_AVATAR_LEN);
                 break;
             }
+            case INS_UPDATE_AVATAR: {
+                avatarLen = writeEncryptedDataChunked(apdu, avatar, MAX_AVATAR_LEN);
+                break;
+            }
             case INS_CLEAR_ALL_DATA: {
                 if (apdu.getBuffer()[ISO7816.OFFSET_LC] != 0) {
                     ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
@@ -251,8 +257,8 @@ public class shop_card_owner extends Applet {
                 readAllData(apdu);
                 break;
             }
-            case INS_GET_SALT: {
-                getSalt(apdu);
+            case INS_UPDATE_DATA: {
+                parseAndEncryptFields(apdu);
                 break;
             }
             default:
@@ -638,6 +644,7 @@ public class shop_card_owner extends Applet {
 
                 Util.arrayCopyNonAtomic(tempAvatarBuffer, (short) 0, paddedData, (short) 0, tempAvatarLen);
                 Util.arrayFillNonAtomic(paddedData, tempAvatarLen, padLen, (byte) padLen);
+                Util.arrayFillNonAtomic(dest, (byte) 0x00, maxLen, (byte) 0x00);
 
                 // Encrypt
                 tempAESKey.setKey(masterKey, (short) 0);
@@ -787,21 +794,21 @@ public class shop_card_owner extends Applet {
                 pos = (short) (pos + rawPhoneLen + 1);
             }
 
-            // Field 3: Card ID
+            // Field 3: Address
             if (pos < rawLen) {
-                cardIdLen = findSeparator(pos);
-                if (cardIdLen > 0) {
-                    Util.arrayCopyNonAtomic(rawData, pos, cardId, (short) 0, cardIdLen);
-                }
-                pos = (short) (pos + cardIdLen + 1);
-            }
-
-            // Field 4: Address (phần còn lại, không có '|' cuối)
-            if (pos < rawLen) {
-                short rawAddressLen = (short) (rawLen - pos);
+                short rawAddressLen = findSeparator(pos);
                 if (rawAddressLen > 0) {
                     addressLen = encryptFieldWithKey(rawData, pos, rawAddressLen,
                             address, (short) 0, MAX_ADDRESS_LEN);
+                }
+                pos = (short) (pos + rawAddressLen + 1);
+            }
+
+            // Field 4: CardID (phần còn lại, không có '|' cuối)
+            if (pos < rawLen) {
+                cardIdLen = (short) (rawLen - pos);
+                if (cardIdLen > 0) {
+                    Util.arrayCopyNonAtomic(rawData, pos, cardId, (short) 0, cardIdLen);
                 }
             }
 
@@ -821,6 +828,9 @@ public class shop_card_owner extends Applet {
      */
     private short encryptFieldWithKey(byte[] src, short srcOff, short srcLen,
                                       byte[] dest, short destOff, short maxLen) {
+
+        Util.arrayFillNonAtomic(dest, destOff, maxLen, (byte) 0x00);
+
         if (srcLen == 0) {
             return 0;
         }
