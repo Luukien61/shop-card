@@ -722,7 +722,7 @@ public class shop_card_owner extends Applet {
     }
 
     /**
-     * Parse data format: PIN|name|phone|cardid|address
+     * Parse data format: PIN|name|phone|address|cardId
      * Decrypt master key once, then encrypt all fields
      */
     private void parseAndEncryptFields(APDU apdu) {
