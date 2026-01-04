@@ -120,9 +120,9 @@ public class ConfirmOrderController {
     }
 
     private void onPinRequest() {
-        try{
+        try {
             boolean isCardLocked = CardHelper.getLockStatus();
-            if(isCardLocked){
+            if (isCardLocked) {
                 showAlert("Khóa thẻ", "Thẻ bị khóa");
                 return;
             }
@@ -144,7 +144,7 @@ public class ConfirmOrderController {
                 },
                 (userPin) -> {
                     try {
-                        userCardInfo = orderService.getUserCardInfo(userPin);
+                        userCardInfo = orderService.getUserCardInfo(userPin, false);
                         displayUserInfo();
                     } catch (Exception e) {
                         showAlert("Lỗi", e.getMessage());
@@ -303,15 +303,6 @@ public class ConfirmOrderController {
     private void processOrder() {
         try {
             orderService.createOrder(userCardInfo.getPhone(), orderItems);
-            System.out.println("=== Thông tin đơn hàng ===");
-            System.out.println("Khách hàng: " + userCardInfo.getUserName());
-            System.out.println("Mã thẻ: " + userCardInfo.getCardId());
-            System.out.println("SĐT: " + userCardInfo.getPhone());
-            System.out.println("Địa chỉ: " + userCardInfo.getAddress());
-            System.out.println("Tạm tính: " + subtotalLabel.getText());
-            System.out.println("Giảm giá: " + discountLabel.getText());
-            System.out.println("Tổng cộng: " + totalLabel.getText());
-            System.out.println("Số sản phẩm: " + orderItems.size());
 
             orderItems.forEach(item -> {
                 System.out.printf("- %s x%d = %s%n",

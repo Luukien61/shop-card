@@ -19,6 +19,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import javax.smartcardio.CardException;
@@ -34,6 +35,8 @@ import static com.luukien.javacard.utils.ApplicationHelper.showAlert;
 
 public class UserInfoController {
 
+    @FXML
+    private VBox pinManagement;
     @FXML
     private Button topUpBtn;
     @FXML
@@ -70,6 +73,7 @@ public class UserInfoController {
     private ToggleGroup gender;
 
     private User user;
+    private boolean isCardPluginAndValidCardId;
 
     @FXML
     private void initialize() {
@@ -121,6 +125,9 @@ public class UserInfoController {
             stage.close();
 
         });
+        isCardPluginAndValidCardId = CardHelper.isCardPluginAndValidCardId(user.getCardId());
+        pinManagement.setVisible(isCardPluginAndValidCardId);
+        pinManagement.setManaged(isCardPluginAndValidCardId);
     }
 
     private String setupBalanceText() {
@@ -203,12 +210,14 @@ public class UserInfoController {
                 DatabaseHelper::verifySysUserPin,
                 (adminPin) -> {
                     try {
-                        CardHelper.unlockCard(adminPin);
+                        CardHelper.unlockCard(adminPin, user.getCardId(), true);
                         showAlert("Mở khoá thành công", true);
                         unlockBtn.setVisible(false);
                         unlockBtn.setManaged(false);
                         unlockBtn.setDisable(true);
-                    } catch (CardException ex) {
+                    } catch (ApplicationException ex) {
+                        showAlert(ex.getMessage(), true);
+                    } catch (Exception ex) {
                         showAlert("Không đọc được thẻ", true);
                     }
                 },
@@ -227,12 +236,22 @@ public class UserInfoController {
                         SecretType.PIN,
                         null,
                         null,
-                        CardHelper::changeUserPin
+                        (currentPin, newPin) -> {
+                            try {
+                                return CardHelper.changeUserPin(currentPin, newPin, user.getCardId(), false);
+                            } catch (ApplicationException ex) {
+                                showAlert(ex.getMessage(), true);
+                                return null;
+                            }
+                        }
                 ),
                 () -> showAlert("Thẻ bị khóa tạm thời!", true)
         ));
 
         forgotPinBtn.setOnAction(e -> onForgotPinBtnClick());
+        forgotPinBtn.setVisible(isAdmin);
+        forgotPinBtn.setManaged(isAdmin);
+        forgotPinBtn.setDisable(!isAdmin);
         topUpBtn.setOnAction(e -> {
             TopupDialog.show().ifPresent(amount -> {
                 try {
@@ -247,6 +266,11 @@ public class UserInfoController {
             });
         });
 
+        updateBtn.setOnAction(e -> {
+            SceneManager.showModal(Scenes.UPDATE_USER_CARD_SCENE);
+            initialize();
+        });
+
 
     }
 
@@ -259,9 +283,9 @@ public class UserInfoController {
                         DatabaseHelper::verifySysUserPin,
                         (adminPin) -> {
                             try {
-                                CardHelper.recoverUserPinWithAdmin(adminPin, userPin);
+                                CardHelper.recoverUserPinWithAdmin(adminPin, userPin, user.getCardId(), true);
                                 showAlert("Thành công", true);
-                            } catch (ApplicationException | CardException e) {
+                            } catch (Exception e) {
                                 showAlert(e.getMessage(), true);
                             }
                         },
@@ -269,7 +293,4 @@ public class UserInfoController {
                 ));
     }
 
-    private void unlockUserCard() {
-
-    }
 }

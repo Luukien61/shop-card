@@ -9,176 +9,267 @@
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="550.0" prefWidth="650.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.UserInfoController">
+<?import javafx.scene.layout.Region?>
+<AnchorPane prefHeight="550.0" prefWidth="650.0" style="-fx-background-color: #F5F7FA;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.luukien.javacard.controller.UserInfoController">
     <children>
         <!-- Header -->
-        <Label layoutX="26.0" layoutY="66.0" prefHeight="32.0" prefWidth="597.0" style="-fx-background-color: #0866FF; -fx-background-radius: 8;" text="Thông tin người dùng" textFill="WHITE">
-            <font>
-                <Font name="System Bold" size="14.0" />
-            </font>
+        <HBox alignment="CENTER_LEFT" layoutX="0.0" layoutY="0.0" prefHeight="50.0" prefWidth="650.0" spacing="15.0" style="-fx-background-color: #FFFFFF; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
             <padding>
-                <Insets left="16.0" />
+                <Insets left="20.0" right="20.0" />
             </padding>
-        </Label>
-
-        <!-- Form thông tin -->
-        <GridPane layoutX="26.0" layoutY="111.0" prefHeight="330.0" prefWidth="413.0" style="-fx-border-color: #CCCCCC; -fx-border-radius: 8; -fx-border-width: 1;">
-            <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="183.6666717529297" minWidth="10.0" prefWidth="110.0" />
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="279.00001525878906" minWidth="10.0" prefWidth="279.00001525878906" />
-            </columnConstraints>
-            <rowConstraints>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            </rowConstraints>
             <children>
-                <Label text="ID thẻ">
+                <Button fx:id="backButton" mnemonicParsing="false" style="-fx-background-color: #E8EAF0; -fx-background-radius: 8; -fx-cursor: hand;" text="← Quay lại" textFill="#374151">
                     <font>
-                        <Font size="14.0" />
+                        <Font name="System Bold" size="13.0" />
                     </font>
-                </Label>
-                <Label text="Họ và tên" GridPane.rowIndex="1">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Label>
-                <Label text="Số điện thoại" GridPane.rowIndex="2">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Label>
-                <Label text="Ngày sinh" GridPane.rowIndex="3">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Label>
-                <Label text="Địa chỉ" GridPane.rowIndex="4">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Label>
-                <Label text="Giới tính" GridPane.rowIndex="5">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Label>
-                <TextField fx:id="cardIdTextField" disable="true" prefHeight="30.0" prefWidth="279.0" GridPane.columnIndex="1" />
-                <TextField fx:id="nameTextField" disable="true" prefHeight="30.0" prefWidth="279.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                <TextField fx:id="phoneTextField" disable="true" prefHeight="30.0" prefWidth="279.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                <TextField fx:id="addressTextField" disable="true" prefHeight="30.0" prefWidth="279.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                <DatePicker fx:id="datePicker" disable="true" prefHeight="30.0" prefWidth="279.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                <HBox alignment="CENTER_LEFT" prefHeight="20.0" prefWidth="279.0" spacing="16.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
-                    <children>
-                        <RadioButton fx:id="menGenderBtn" disable="true" mnemonicParsing="false" text="Nam">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                            <toggleGroup>
-                                <ToggleGroup fx:id="gender" />
-                            </toggleGroup>
-                        </RadioButton>
-                        <RadioButton fx:id="womenGenderBtn" disable="true" mnemonicParsing="false" text="Nữ" toggleGroup="$gender">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </RadioButton>
-                    </children>
-                </HBox>
-                <Label text="Số dư" GridPane.rowIndex="6">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Label>
-                <Label fx:id="balanceLabel" text="10000 (Bzone)" GridPane.columnIndex="1" GridPane.rowIndex="6">
-                    <font>
-                        <Font name="System Bold" size="14.0" />
-                    </font>
-                </Label>
-                <Label text="PIN" GridPane.rowIndex="7">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Label>
-                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="7">
-                    <children>
-                        <Label text="******">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </Label>
-                        <Button fx:id="changePinBtn" mnemonicParsing="false" style="-fx-background-color: #0866FF;" text="Thay đổi" textFill="WHITE">
-                            <font>
-                                <Font size="13.0" />
-                            </font>
-                        </Button>
-                        <Button fx:id="forgotPinBtn" mnemonicParsing="false" style="-fx-background-color: #FF6B35;" text="Quên mã" textFill="WHITE">
-                            <font>
-                                <Font size="13.0" />
-                            </font>
-                        </Button>
-
-                        <Button fx:id="unlockBtn" mnemonicParsing="false" style="-fx-background-color: #DC3545;" text="Unlock" textFill="WHITE" visible="false">
-                            <font>
-                                <Font size="13.0" />
-                            </font>
-                        </Button>
-                    </children>
-                </HBox>
-            </children>
-            <padding>
-                <Insets bottom="8.0" left="16.0" right="16.0" top="16.0" />
-            </padding>
-        </GridPane>
-
-        <!-- Ảnh đại diện -->
-        <ImageView fx:id="imgView" fitHeight="187.0" fitWidth="140.0" layoutX="468.0" layoutY="127.0" pickOnBounds="true" preserveRatio="true" />
-        <Button fx:id="pickImgBtn" disable="true" layoutX="489.0" layoutY="325.0" mnemonicParsing="false" prefHeight="29.0" prefWidth="100.0" text="Chọn ảnh" visible="false">
-            <font>
-                <Font size="14.0" />
-            </font>
-        </Button>
-
-        <!-- Các nút chức năng chính -->
-        <HBox alignment="CENTER" layoutX="165.0" layoutY="460.0" spacing="16.0">
-            <children>
-                <Button fx:id="topUpBtn" mnemonicParsing="false" prefHeight="35.0" prefWidth="120.0" style="-fx-background-color: #28A745;" text="Nạp tiền" textFill="WHITE">
-                    <font>
-                        <Font name="System Bold" size="14.0" />
-                    </font>
+                    <padding>
+                        <Insets bottom="8.0" left="16.0" right="16.0" top="8.0" />
+                    </padding>
                 </Button>
-                <Button fx:id="updateBtn" mnemonicParsing="false" prefHeight="35.0" prefWidth="120.0" style="-fx-background-color: #0866FF;" text="Cập nhật" textFill="WHITE">
+                <Label text="Thông tin người dùng" textFill="#1F2937">
                     <font>
-                        <Font name="System Bold" size="14.0" />
+                        <Font name="System Bold" size="18.0" />
                     </font>
-                </Button>
+                </Label>
             </children>
         </HBox>
 
+        <!-- Main Content -->
+        <VBox layoutX="20.0" layoutY="60.0" prefHeight="430.0" prefWidth="610.0" spacing="20.0">
+            <children>
+                <!-- User Information Card -->
+                <VBox prefWidth="611.0" spacing="16.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2); -fx-padding: 16;">
+                    <children>
+      
+                        <HBox spacing="25.0">
+                            <children>
+                                <!-- Left Side - Form -->
+                                <VBox prefWidth="400.0" spacing="18.0">
+                                    <children>
+                                        <!-- ID thẻ -->
+                                        <VBox spacing="8.0">
+                                            <children>
+                                                <Label text="ID thẻ" textFill="#374151">
+                                                    <font>
+                                                        <Font name="System Bold" size="13.0" />
+                                                    </font>
+                                                </Label>
+                                                <TextField fx:id="cardIdTextField" disable="true" style="-fx-background-color: #F9FAFB; -fx-border-color: #E5E7EB; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8; -fx-opacity: 1.0;">
+                                                    <font>
+                                                        <Font size="13.0" />
+                                                    </font>
+                                                </TextField>
+                                            </children>
+                                        </VBox>
+      
+                                        <!-- Họ và tên & Số điện thoại -->
+                                        <HBox spacing="15.0">
+                                            <children>
+                                                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                                                    <children>
+                                                        <Label text="Họ và tên" textFill="#374151">
+                                                            <font>
+                                                                <Font name="System Bold" size="13.0" />
+                                                            </font>
+                                                        </Label>
+                                                        <TextField fx:id="nameTextField" disable="true" prefWidth="190.0" style="-fx-background-color: #F9FAFB; -fx-border-color: #E5E7EB; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8; -fx-opacity: 1.0;">
+                                                            <font>
+                                                                <Font size="13.0" />
+                                                            </font>
+                                                        </TextField>
+                                                    </children>
+                                                </VBox>
+                                                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                                                    <children>
+                                                        <Label text="Số điện thoại" textFill="#374151">
+                                                            <font>
+                                                                <Font name="System Bold" size="13.0" />
+                                                            </font>
+                                                        </Label>
+                                                        <TextField fx:id="phoneTextField" disable="true" prefWidth="190.0" style="-fx-background-color: #F9FAFB; -fx-border-color: #E5E7EB; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8; -fx-opacity: 1.0;">
+                                                            <font>
+                                                                <Font size="13.0" />
+                                                            </font>
+                                                        </TextField>
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </HBox>
+      
+                                        <!-- Ngày sinh & Giới tính -->
+                                        <HBox spacing="15.0">
+                                            <children>
+                                                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                                                    <children>
+                                                        <Label text="Ngày sinh" textFill="#374151">
+                                                            <font>
+                                                                <Font name="System Bold" size="13.0" />
+                                                            </font>
+                                                        </Label>
+                                                        <DatePicker fx:id="datePicker" disable="true" prefWidth="190.0" style="-fx-background-color: #F9FAFB; -fx-border-color: #E5E7EB; -fx-border-radius: 8; -fx-background-radius: 8; -fx-opacity: 1.0;" />
+                                                    </children>
+                                                </VBox>
+                                                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                                                    <children>
+                                                        <Label text="Giới tính" textFill="#374151">
+                                                            <font>
+                                                                <Font name="System Bold" size="13.0" />
+                                                            </font>
+                                                        </Label>
+                                                        <HBox alignment="CENTER_LEFT" prefWidth="190.0" spacing="20.0" style="-fx-padding: 10 0 0 10;">
+                                                            <children>
+                                                                <RadioButton fx:id="menGenderBtn" disable="true" mnemonicParsing="false" text="Nam" textFill="#374151">
+                                                                    <toggleGroup>
+                                                                        <ToggleGroup fx:id="gender" />
+                                                                    </toggleGroup>
+                                                                    <font>
+                                                                        <Font size="13.0" />
+                                                                    </font>
+                                                                </RadioButton>
+                                                                <RadioButton fx:id="womenGenderBtn" disable="true" mnemonicParsing="false" text="Nữ" textFill="#374151" toggleGroup="$gender">
+                                                                    <font>
+                                                                        <Font size="13.0" />
+                                                                    </font>
+                                                                </RadioButton>
+                                                            </children>
+                                                        </HBox>
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </HBox>
+      
+                                        <!-- Địa chỉ -->
+                                        <VBox spacing="8.0">
+                                            <children>
+                                                <Label text="Địa chỉ" textFill="#374151">
+                                                    <font>
+                                                        <Font name="System Bold" size="13.0" />
+                                                    </font>
+                                                </Label>
+                                                <TextField fx:id="addressTextField" disable="true" style="-fx-background-color: #F9FAFB; -fx-border-color: #E5E7EB; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8; -fx-opacity: 1.0;">
+                                                    <font>
+                                                        <Font size="13.0" />
+                                                    </font>
+                                                </TextField>
+                                            </children>
+                                        </VBox>
+                                          <!-- Số dư -->
+                                          <VBox maxHeight="50.0" prefHeight="50.0" style="-fx-background-color: #F0FDF4; -fx-background-radius: 10; -fx-padding: 6;">
+                                              <children>
+                                                  <Label text="Số dư" textFill="#374151">
+                                                      <font>
+                                                          <Font name="System Bold" size="13.0" />
+                                                      </font>
+                                                  </Label>
+                                                  <Label fx:id="balanceLabel" text="10000" textFill="#10B981">
+                                                      <font>
+                                                          <Font name="System Bold" size="18.0" />
+                                                      </font>
+                                                  </Label>
+                                              </children>
+                                          </VBox>
 
-        <!-- Thông báo tài khoản bị khóa -->
-        <Label layoutX="200.0" layoutY="510.0" text="Tài khoản đã bị khoá." textFill="#DC3545" visible="false">
+                                                <!-- PIN -->
+                                          <VBox fx:id="pinManagement" maxHeight="50.0" style="-fx-background-color: #FEF3C7; -fx-background-radius: 10; -fx-padding: 8;">
+                                              <children>
+                                                  <Label text="Mã PIN" textFill="#374151">
+                                                      <font>
+                                                          <Font name="System Bold" size="13.0" />
+                                                      </font>
+                                                  </Label>
+                                                  <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                                      <children>
+                                                          <Label text="••••••" textFill="#92400E">
+                                                              <font>
+                                                                  <Font name="System Bold" size="16.0" />
+                                                              </font>
+                                                          </Label>
+                                                          <Region HBox.hgrow="ALWAYS" />
+                                                          <Button fx:id="changePinBtn" mnemonicParsing="false" style="-fx-background-color: #3B82F6; -fx-background-radius: 6; -fx-cursor: hand;" text="Thay đổi" textFill="WHITE">
+                                                              <font>
+                                                                  <Font name="System Bold" size="11.0" />
+                                                              </font>
+                                                              <padding>
+                                                                  <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+                                                              </padding>
+                                                          </Button>
+                                                          <Button fx:id="forgotPinBtn" mnemonicParsing="false" style="-fx-background-color: #F59E0B; -fx-background-radius: 6; -fx-cursor: hand;" text="Quên" textFill="WHITE">
+                                                              <font>
+                                                                  <Font name="System Bold" size="11.0" />
+                                                              </font>
+                                                              <padding>
+                                                                  <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+                                                              </padding>
+                                                          </Button>
+                                                          <Button fx:id="unlockBtn" mnemonicParsing="false" style="-fx-background-color: #DC3545; -fx-background-radius: 6; -fx-cursor: hand;" text="Unlock" textFill="WHITE" visible="false">
+                                                              <font>
+                                                                  <Font name="System Bold" size="11.0" />
+                                                              </font>
+                                                              <padding>
+                                                                  <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+                                                              </padding>
+                                                          </Button>
+                                                      </children>
+                                                  </HBox>
+                                              </children>
+                                          </VBox>
+                                    </children>
+                                </VBox>
+      
+                                <!-- Right Side - Image -->
+                                <VBox alignment="TOP_CENTER" maxHeight="200.0" prefHeight="200.0" prefWidth="160.0" spacing="10.0" style="-fx-background-color: #F9FAFB; -fx-background-radius: 12; -fx-padding: 15; -fx-border-color: #E5E7EB; -fx-border-radius: 12; -fx-border-width: 2;">
+                                    <children>
+                                        <Label text="Ảnh đại diện" textFill="#374151">
+                                            <font>
+                                                <Font name="System Bold" size="13.0" />
+                                            </font>
+                                        </Label>
+                                        <ImageView fx:id="imgView" fitHeight="130.0" fitWidth="130.0" pickOnBounds="true" preserveRatio="true" style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);" />
+                                        <Button fx:id="pickImgBtn" disable="true" mnemonicParsing="false" style="-fx-background-color: #10B981; -fx-background-radius: 8; -fx-cursor: hand;" text="📷 Chọn ảnh" textFill="WHITE" visible="false">
+                                            <font>
+                                                <Font name="System Bold" size="11.0" />
+                                            </font>
+                                            <padding>
+                                                <Insets bottom="6.0" left="12.0" right="12.0" top="6.0" />
+                                            </padding>
+                                        </Button>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+
+                <!-- Action Buttons -->
+                <HBox alignment="CENTER" spacing="15.0">
+                    <children>
+                        <Button fx:id="topUpBtn" mnemonicParsing="false" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: linear-gradient(to right, #10B981, #059669); -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(16,185,129,0.3), 8, 0, 0, 3);" text="💰 Nạp tiền" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <Button fx:id="updateBtn" mnemonicParsing="false" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: linear-gradient(to right, #3B82F6, #2563EB); -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.3), 8, 0, 0, 3);" text="✓ Cập nhật" textFill="WHITE">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Button>
+                    </children>
+               <VBox.margin>
+                  <Insets bottom="16.0" />
+               </VBox.margin>
+                </HBox>
+            </children>
+        </VBox>
+
+        <!-- Warning Label -->
+        <Label layoutX="200.0" layoutY="530.0" text="Tài khoản đã bị khoá." textFill="#DC3545" visible="false">
             <font>
-                <Font name="System Bold" size="14.0" />
+                <Font name="System Bold" size="13.0" />
             </font>
         </Label>
-
-        <!-- Nút quay lại -->
-        <Button fx:id="backButton" layoutX="26.0" layoutY="25.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="90.0" style="-fx-background-color: #6C757D;" text="Quay lại" textFill="WHITE">
-            <font>
-                <Font size="14.0" />
-            </font>
-        </Button>
     </children>
 </AnchorPane>

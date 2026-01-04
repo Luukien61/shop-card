@@ -99,6 +99,8 @@ public class shop_card_owner extends Applet {
     private static final byte INS_READ_ALL_DATA = (byte) 0x55;
     private static final byte INS_VERIFY_CARD = (byte) 0x11;
     private static final byte INS_UNLOCK_CARD = (byte) 0x31;
+    private static final byte INS_UPDATE_DATA = (byte) 0x32;
+    private static final byte INS_UPDATE_AVATAR = (byte) 0x33;
 
     private shop_card_owner() {
         name = new byte[MAX_NAME_LEN];
@@ -200,6 +202,10 @@ public class shop_card_owner extends Applet {
                 avatarLen = writeEncryptedDataChunked(apdu, avatar, MAX_AVATAR_LEN);
                 break;
             }
+            case INS_UPDATE_AVATAR: {
+                avatarLen = writeEncryptedDataChunked(apdu, avatar, MAX_AVATAR_LEN);
+                break;
+            }
             case INS_CLEAR_ALL_DATA: {
                 if (apdu.getBuffer()[ISO7816.OFFSET_LC] != 0) {
                     ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
@@ -251,8 +257,8 @@ public class shop_card_owner extends Applet {
                 readAllData(apdu);
                 break;
             }
-            case INS_GET_SALT: {
-                getSalt(apdu);
+            case INS_UPDATE_DATA: {
+                parseAndEncryptFields(apdu);
                 break;
             }
             default:
@@ -638,6 +644,7 @@ public class shop_card_owner extends Applet {
 
                 Util.arrayCopyNonAtomic(tempAvatarBuffer, (short) 0, paddedData, (short) 0, tempAvatarLen);
                 Util.arrayFillNonAtomic(paddedData, tempAvatarLen, padLen, (byte) padLen);
+                Util.arrayFillNonAtomic(dest, (byte) 0x00, maxLen, (byte) 0x00);
 
                 // Encrypt
                 tempAESKey.setKey(masterKey, (short) 0);
@@ -787,21 +794,21 @@ public class shop_card_owner extends Applet {
                 pos = (short) (pos + rawPhoneLen + 1);
             }
 
-            // Field 3: Card ID
+            // Field 3: Address
             if (pos < rawLen) {
-                cardIdLen = findSeparator(pos);
-                if (cardIdLen > 0) {
-                    Util.arrayCopyNonAtomic(rawData, pos, cardId, (short) 0, cardIdLen);
-                }
-                pos = (short) (pos + cardIdLen + 1);
-            }
-
-            // Field 4: Address (phần còn lại, không có '|' cuối)
-            if (pos < rawLen) {
-                short rawAddressLen = (short) (rawLen - pos);
+                short rawAddressLen = findSeparator(pos);
                 if (rawAddressLen > 0) {
                     addressLen = encryptFieldWithKey(rawData, pos, rawAddressLen,
                             address, (short) 0, MAX_ADDRESS_LEN);
+                }
+                pos = (short) (pos + rawAddressLen + 1);
+            }
+
+            // Field 4: CardID (phần còn lại, không có '|' cuối)
+            if (pos < rawLen) {
+                cardIdLen = (short) (rawLen - pos);
+                if (cardIdLen > 0) {
+                    Util.arrayCopyNonAtomic(rawData, pos, cardId, (short) 0, cardIdLen);
                 }
             }
 
@@ -821,6 +828,9 @@ public class shop_card_owner extends Applet {
      */
     private short encryptFieldWithKey(byte[] src, short srcOff, short srcLen,
                                       byte[] dest, short destOff, short maxLen) {
+
+        Util.arrayFillNonAtomic(dest, destOff, maxLen, (byte) 0x00);
+
         if (srcLen == 0) {
             return 0;
         }
@@ -1341,7 +1351,13 @@ public class shop_card_owner extends Applet {
 
     private void verifyCard(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
+        byte p1 = buffer[ISO7816.OFFSET_P1];
         short lc = (short) (buffer[ISO7816.OFFSET_LC] & 0xFF);
+
+        // Validate P1
+        if (p1 != 0x00 && p1 != 0x01) {
+            ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
+        }
 
         if (lc != 22) {
             ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
@@ -1361,8 +1377,10 @@ public class shop_card_owner extends Applet {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
-        // Check if card is blocked
-        if (userPin.getTriesRemaining() == 0) {
+        // Check if card is blocked based on P1
+        if (p1 == 0x00 && userPin.getTriesRemaining() == 0) {
+            ISOException.throwIt((short) 0x6983);
+        } else if (p1 == 0x01 && adminPin.getTriesRemaining() == 0) {
             ISOException.throwIt((short) 0x6983);
         }
 
@@ -1376,24 +1394,47 @@ public class shop_card_owner extends Applet {
         RSAPrivateKey tempPrivateKey = null;
 
         try {
-            // Verify PIN using OwnerPIN
-            if (!userPin.check(buffer, pinOff, PIN_SIZE)) {
-                ISOException.throwIt((short) (0x63C0 | userPin.getTriesRemaining()));
+            // Verify PIN based on P1
+            if (p1 == 0x00) {
+                // Use User PIN
+                if (!userPin.check(buffer, pinOff, PIN_SIZE)) {
+                    ISOException.throwIt((short) (0x63C0 | userPin.getTriesRemaining()));
+                }
+
+                // Verify PIN hash
+                sha256.reset();
+                sha256.doFinal(buffer, pinOff, (short) 6, tempBuffer32, (short) 0);
+
+                if (Util.arrayCompare(tempBuffer32, (short) 0, userPinHash, (short) 0, (short) 32) != 0) {
+                    ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+                }
+
+                // Copy challenge to safe buffer
+                Util.arrayCopyNonAtomic(buffer, challengeOff, challengeBuffer, (short) 0, CHALLENGE_LENGTH);
+
+                // Decrypt Master Key with User PIN
+                decryptMasterKeyWithUserPin(buffer, pinOff, masterKey, (short) 0);
+
+            } else { // p1 == 0x01
+                // Use Admin PIN
+                if (!adminPin.check(buffer, pinOff, PIN_SIZE)) {
+                    ISOException.throwIt((short) (0x63C0 | adminPin.getTriesRemaining()));
+                }
+
+                // Verify Admin PIN hash
+                sha256.reset();
+                sha256.doFinal(buffer, pinOff, (short) 6, tempBuffer32, (short) 0);
+
+                if (Util.arrayCompare(tempBuffer32, (short) 0, adminPinHash, (short) 0, (short) 32) != 0) {
+                    ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+                }
+
+                // Copy challenge to safe buffer
+                Util.arrayCopyNonAtomic(buffer, challengeOff, challengeBuffer, (short) 0, CHALLENGE_LENGTH);
+
+                // Decrypt Master Key with Admin PIN
+                decryptMasterKeyWithAdminPin(buffer, pinOff, masterKey, (short) 0);
             }
-
-            // Verify PIN hash
-            sha256.reset();
-            sha256.doFinal(buffer, pinOff, (short) 6, tempBuffer32, (short) 0);
-
-            if (Util.arrayCompare(tempBuffer32, (short) 0, userPinHash, (short) 0, (short) 32) != 0) {
-                ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
-            }
-
-            // Copy challenge to safe buffer
-            Util.arrayCopyNonAtomic(buffer, challengeOff, challengeBuffer, (short) 0, CHALLENGE_LENGTH);
-
-            // Decrypt Master Key
-            decryptMasterKeyWithUserPin(buffer, pinOff, masterKey, (short) 0);
 
             tempAESKey.setKey(masterKey, (short) 0);
 

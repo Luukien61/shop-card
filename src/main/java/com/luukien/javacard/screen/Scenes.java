@@ -18,5 +18,6 @@ public class Scenes {
     public static final String PRODUCT_DETAIL_SCENE = "product-detail-view.fxml";
     public static final String VERIFY_PIN_SCENE = "verify-secret-view.fxml";
     public static final String UPDATE_CREDENTIAL_SCENE = "update-credential-view.fxml";
+    public static final String UPDATE_USER_CARD_SCENE = "update-user-card-view.fxml";
 
 }

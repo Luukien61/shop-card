@@ -320,6 +320,10 @@ public class HomeManagementController {
                         if (user != null && e.getClickCount() == 1) {
                             AppState.getInstance().setCurrentClientPhone(user.getPhone());
                             SceneManager.showModal(Scenes.USER_INFO_SCENE);
+                            List<User> items = userService.loadUsers();
+                            if (!items.isEmpty()) {
+                                userData.setAll(items);
+                            }
                         }
                     });
 
@@ -345,6 +349,10 @@ public class HomeManagementController {
 
     private void onNewUserBtnClick() {
         SceneManager.showModal(Scenes.INITIAL_CARD_SCENE);
+        List<User> items = userService.loadUsers();
+        if (!items.isEmpty()) {
+            userData.setAll(items);
+        }
     }
 
     private void handleProductTabSelected() {

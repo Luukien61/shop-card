@@ -54,6 +54,7 @@ public class SceneManager {
     }
 
 
+
     public static <T> T showModal(String fxmlFile) {
         return showModal(fxmlFile, null, null, null);
     }
