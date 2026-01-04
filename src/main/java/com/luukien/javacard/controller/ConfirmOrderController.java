@@ -120,9 +120,9 @@ public class ConfirmOrderController {
     }
 
     private void onPinRequest() {
-        try{
+        try {
             boolean isCardLocked = CardHelper.getLockStatus();
-            if(isCardLocked){
+            if (isCardLocked) {
                 showAlert("Khóa thẻ", "Thẻ bị khóa");
                 return;
             }
@@ -144,7 +144,7 @@ public class ConfirmOrderController {
                 },
                 (userPin) -> {
                     try {
-                        userCardInfo = orderService.getUserCardInfo(userPin);
+                        userCardInfo = orderService.getUserCardInfo(userPin, false);
                         displayUserInfo();
                     } catch (Exception e) {
                         showAlert("Lỗi", e.getMessage());

@@ -21,8 +21,8 @@ public class OrderService {
     private static final OrderService instance = new OrderService();
 
 
-    public UserCardInfo getUserCardInfo(String pin) throws Exception {
-        return CardHelper.getUserCardInfo(pin);
+    public UserCardInfo getUserCardInfo(String pin, boolean isAdminPin) throws Exception {
+        return CardHelper.getUserCardInfo(pin, isAdminPin);
     }
 
     public List<Order> loadOrder() {
@@ -141,7 +141,6 @@ public class OrderService {
     }
 
 
-
     public void createOrder(String phone, List<OrderItem> items) throws ApplicationException {
 
         String selectUserSql =
@@ -256,7 +255,10 @@ public class OrderService {
 
     private void rollback(Connection conn) {
         if (conn != null) {
-            try { conn.rollback(); } catch (SQLException ignored) {}
+            try {
+                conn.rollback();
+            } catch (SQLException ignored) {
+            }
         }
     }
 
@@ -265,7 +267,8 @@ public class OrderService {
             try {
                 conn.setAutoCommit(true);
                 conn.close();
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 

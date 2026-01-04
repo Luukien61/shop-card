@@ -1351,7 +1351,13 @@ public class shop_card_owner extends Applet {
 
     private void verifyCard(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
+        byte p1 = buffer[ISO7816.OFFSET_P1];
         short lc = (short) (buffer[ISO7816.OFFSET_LC] & 0xFF);
+
+        // Validate P1
+        if (p1 != 0x00 && p1 != 0x01) {
+            ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
+        }
 
         if (lc != 22) {
             ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
@@ -1371,8 +1377,10 @@ public class shop_card_owner extends Applet {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
-        // Check if card is blocked
-        if (userPin.getTriesRemaining() == 0) {
+        // Check if card is blocked based on P1
+        if (p1 == 0x00 && userPin.getTriesRemaining() == 0) {
+            ISOException.throwIt((short) 0x6983);
+        } else if (p1 == 0x01 && adminPin.getTriesRemaining() == 0) {
             ISOException.throwIt((short) 0x6983);
         }
 
@@ -1386,24 +1394,47 @@ public class shop_card_owner extends Applet {
         RSAPrivateKey tempPrivateKey = null;
 
         try {
-            // Verify PIN using OwnerPIN
-            if (!userPin.check(buffer, pinOff, PIN_SIZE)) {
-                ISOException.throwIt((short) (0x63C0 | userPin.getTriesRemaining()));
+            // Verify PIN based on P1
+            if (p1 == 0x00) {
+                // Use User PIN
+                if (!userPin.check(buffer, pinOff, PIN_SIZE)) {
+                    ISOException.throwIt((short) (0x63C0 | userPin.getTriesRemaining()));
+                }
+
+                // Verify PIN hash
+                sha256.reset();
+                sha256.doFinal(buffer, pinOff, (short) 6, tempBuffer32, (short) 0);
+
+                if (Util.arrayCompare(tempBuffer32, (short) 0, userPinHash, (short) 0, (short) 32) != 0) {
+                    ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+                }
+
+                // Copy challenge to safe buffer
+                Util.arrayCopyNonAtomic(buffer, challengeOff, challengeBuffer, (short) 0, CHALLENGE_LENGTH);
+
+                // Decrypt Master Key with User PIN
+                decryptMasterKeyWithUserPin(buffer, pinOff, masterKey, (short) 0);
+
+            } else { // p1 == 0x01
+                // Use Admin PIN
+                if (!adminPin.check(buffer, pinOff, PIN_SIZE)) {
+                    ISOException.throwIt((short) (0x63C0 | adminPin.getTriesRemaining()));
+                }
+
+                // Verify Admin PIN hash
+                sha256.reset();
+                sha256.doFinal(buffer, pinOff, (short) 6, tempBuffer32, (short) 0);
+
+                if (Util.arrayCompare(tempBuffer32, (short) 0, adminPinHash, (short) 0, (short) 32) != 0) {
+                    ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+                }
+
+                // Copy challenge to safe buffer
+                Util.arrayCopyNonAtomic(buffer, challengeOff, challengeBuffer, (short) 0, CHALLENGE_LENGTH);
+
+                // Decrypt Master Key with Admin PIN
+                decryptMasterKeyWithAdminPin(buffer, pinOff, masterKey, (short) 0);
             }
-
-            // Verify PIN hash
-            sha256.reset();
-            sha256.doFinal(buffer, pinOff, (short) 6, tempBuffer32, (short) 0);
-
-            if (Util.arrayCompare(tempBuffer32, (short) 0, userPinHash, (short) 0, (short) 32) != 0) {
-                ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
-            }
-
-            // Copy challenge to safe buffer
-            Util.arrayCopyNonAtomic(buffer, challengeOff, challengeBuffer, (short) 0, CHALLENGE_LENGTH);
-
-            // Decrypt Master Key
-            decryptMasterKeyWithUserPin(buffer, pinOff, masterKey, (short) 0);
 
             tempAESKey.setKey(masterKey, (short) 0);
 

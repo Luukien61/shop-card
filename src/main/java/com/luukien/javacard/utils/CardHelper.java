@@ -244,7 +244,7 @@ public class CardHelper {
         }
     }
 
-    public static boolean changeUserPin(String currentPin, String newPin) {
+    public static boolean changeUserPin(String currentPin, String newPin, String cardId, boolean isAdminPin) throws ApplicationException {
         if (currentPin.length() != 6 || newPin.length() != 6 || !currentPin.matches("\\d{6}") || !newPin.matches("\\d{6}")) {
             return false;
         }
@@ -255,7 +255,14 @@ public class CardHelper {
             if (resp.getSW() != SUCCESS_SW) {
                 throw new RuntimeException("unable to select the applet");
             }
-
+            boolean isCardVerified = isCardVerified(channel,
+                    cardId,
+                    currentPin.getBytes(StandardCharsets.UTF_8),
+                    isAdminPin
+            );
+            if (!isCardVerified) {
+                throw new ApplicationException("Thẻ không xác thực");
+            }
             byte[] data = new byte[12];
             System.arraycopy(currentPin.getBytes(), 0, data, 0, 6);
             System.arraycopy(newPin.getBytes(), 0, data, 6, 6);
@@ -270,6 +277,8 @@ public class CardHelper {
             ResponseAPDU result = channel.transmit(cmd);
             return result.getSW() == SUCCESS_SW;
 
+        } catch (ApplicationException e) {
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -406,7 +415,7 @@ public class CardHelper {
         return resp.getSW() == SUCCESS_SW;
     }
 
-    public static void recoverUserPinWithAdmin(String adminPin, String newUserPin) throws ApplicationException, CardException {
+    public static void recoverUserPinWithAdmin(String adminPin, String newUserPin, String cardId, boolean isAdminPin) throws Exception {
         if (newUserPin.length() != 6 || !newUserPin.matches("\\d{6}")) {
             throw new ApplicationException("Pin không đúng định dạng");
         }
@@ -415,6 +424,10 @@ public class CardHelper {
         ResponseAPDU resp = channel.transmit(select);
         if (resp.getSW() != SUCCESS_SW) {
             throw new ApplicationException("unable to select the applet");
+        }
+        boolean isCardVerified = isCardVerified(channel, cardId, adminPin.getBytes(StandardCharsets.UTF_8), isAdminPin);
+        if(!isCardVerified){
+            throw new ApplicationException("Thẻ không xác thực");
         }
         byte[] data = new byte[12];
         System.arraycopy(adminPin.getBytes(), 0, data, 0, 6);
@@ -504,13 +517,14 @@ public class CardHelper {
         System.out.println("Avatar written successfully!");
     }
 
-    public static Boolean isCardVerified(CardChannel channel, String cardId, byte[] pin) throws Exception {
+
+    private static Boolean isCardVerified(CardChannel channel, String cardId, byte[] pin, boolean isAdminPin) throws Exception {
         String publicKey = DatabaseHelper.getUserPublicKey(cardId);
-        return verifyCard(channel, publicKey, pin);
+        return verifyCard(channel, publicKey, pin, isAdminPin);
     }
 
 
-    public static UserCardInfo getUserCardInfo(String pin) throws Exception {
+    public static UserCardInfo getUserCardInfo(String pin, boolean isAdminPin) throws Exception {
         CardChannel channel = connect();
         CommandAPDU select = selectAID(AID);
         ResponseAPDU resp = channel.transmit(select);
@@ -518,7 +532,7 @@ public class CardHelper {
             throw new RuntimeException("unable to select the applet");
         }
         byte[] pinData = pin.getBytes(StandardCharsets.UTF_8);
-        return readData(channel, INS_READ_ALL_DATA, pinData);
+        return readData(channel, INS_READ_ALL_DATA, pinData, isAdminPin);
     }
 
     public static Boolean isCardPluginAndValidCardId(String cardId) {
@@ -536,10 +550,10 @@ public class CardHelper {
         }
     }
 
-    private static UserCardInfo readData(CardChannel channel, byte ins, byte[] pin) throws Exception {
+    private static UserCardInfo readData(CardChannel channel, byte ins, byte[] pin, boolean isAdminPin) throws Exception {
         String cardId = readCardId(channel);
 
-        Boolean isCardVerified = isCardVerified(channel, cardId, pin);
+        Boolean isCardVerified = isCardVerified(channel, cardId, pin, isAdminPin);
         if (!isCardVerified) {
             return UserCardInfo.builder()
                     .isCardVerified(false)
@@ -736,11 +750,13 @@ public class CardHelper {
         return publicKey;
     }
 
-    public static boolean verifyCard(CardChannel channel, String publicKeyBase64, byte[] pin) throws Exception {
+    public static boolean verifyCard(CardChannel channel, String publicKeyBase64, byte[] pin, boolean isAdminPin) throws Exception {
 
         byte[] pubKeyData = Base64.getDecoder().decode(publicKeyBase64);
         PublicKey publicKey = parsePublicKey(pubKeyData);
-
+        byte p1 = 0x00;
+        if (isAdminPin)
+            p1 = 0x01;
 
         SecureRandom random = new SecureRandom();
         byte[] challenge = new byte[16];
@@ -750,7 +766,7 @@ public class CardHelper {
         CommandAPDU command = new CommandAPDU(
                 0x00,                    // CLA
                 INS_VERIFY_CARD,        // INS
-                0x00,                    // P1
+                p1,                    // P1
                 0x00,                    // P2
                 withUserPin(pin, challenge)
         );
@@ -758,6 +774,9 @@ public class CardHelper {
         ResponseAPDU response = channel.transmit(command);
 
         if (response.getSW() != SUCCESS_SW) {
+            if(response.getSW() == 0x6983){
+                throw new ApplicationException("Thẻ đang bị khoá");
+            }
             throw new CardException(
                     String.format("Card verification failed: 0x%04X", response.getSW())
             );
@@ -799,7 +818,7 @@ public class CardHelper {
         return data[0] == (byte) 0x01;
     }
 
-    public static void unlockCard(String adminPin) throws CardException {
+    public static void unlockCard(String adminPin, String cardId, boolean isAdminPin) throws Exception {
         CardChannel channel = connect();
         CommandAPDU select = selectAID(AID);
         ResponseAPDU response = channel.transmit(select);
@@ -807,6 +826,10 @@ public class CardHelper {
             throw new RuntimeException("unable to select the applet");
         }
         byte[] data = adminPin.getBytes(StandardCharsets.UTF_8);
+        boolean isCardVerified = isCardVerified(channel, cardId, data, isAdminPin);
+        if (!isCardVerified) {
+            throw new ApplicationException("Card is not verified");
+        }
         CommandAPDU apdu = new CommandAPDU(
                 0x00,
                 INS_UNLOCK_CARD,

@@ -210,12 +210,14 @@ public class UserInfoController {
                 DatabaseHelper::verifySysUserPin,
                 (adminPin) -> {
                     try {
-                        CardHelper.unlockCard(adminPin);
+                        CardHelper.unlockCard(adminPin, user.getCardId(), true);
                         showAlert("Mở khoá thành công", true);
                         unlockBtn.setVisible(false);
                         unlockBtn.setManaged(false);
                         unlockBtn.setDisable(true);
-                    } catch (CardException ex) {
+                    } catch (ApplicationException ex) {
+                        showAlert(ex.getMessage(), true);
+                    } catch (Exception ex) {
                         showAlert("Không đọc được thẻ", true);
                     }
                 },
@@ -234,7 +236,14 @@ public class UserInfoController {
                         SecretType.PIN,
                         null,
                         null,
-                        CardHelper::changeUserPin
+                        (currentPin, newPin) -> {
+                            try {
+                                return CardHelper.changeUserPin(currentPin, newPin, user.getCardId(), false);
+                            } catch (ApplicationException ex) {
+                                showAlert(ex.getMessage(), true);
+                                return null;
+                            }
+                        }
                 ),
                 () -> showAlert("Thẻ bị khóa tạm thời!", true)
         ));
@@ -274,9 +283,9 @@ public class UserInfoController {
                         DatabaseHelper::verifySysUserPin,
                         (adminPin) -> {
                             try {
-                                CardHelper.recoverUserPinWithAdmin(adminPin, userPin);
+                                CardHelper.recoverUserPinWithAdmin(adminPin, userPin, user.getCardId(), true);
                                 showAlert("Thành công", true);
-                            } catch (ApplicationException | CardException e) {
+                            } catch (Exception e) {
                                 showAlert(e.getMessage(), true);
                             }
                         },
